@@ -26,9 +26,10 @@
 #include <lax/transformmath.h>
 #include <lax/filedialog.h>
 #include <lax/units.h>
+#include <lax/popupmenu.h>
 
-// DBG !!!!!
-#include <lax/displayer-cairo.h>
+// // DBG !!!!!
+// #include <lax/displayer-cairo.h>
 
 
 #include <iostream>
@@ -42,15 +43,6 @@ using namespace LaxInterfaces;
 
 
 namespace Laidout {
-
-
-void SignatureInterface::NewLengthInputWindow(const char *name, ActionArea *area, const char *message, double startvalue)
-{
-	DoubleBBox bounds(area->minx,area->maxx+area->boxwidth(), area->miny,area->maxy);
-	char scratch[30];
-	sprintf(scratch, "%g", startvalue);
-	viewport->SetupInputBox(object_id, name, scratch, message, bounds);
-}
 
 
 // *** for debugging:
@@ -119,6 +111,8 @@ enum SignatureInterfaceAreas {
 	SP_Current_Sheet,
 
 	SP_Automarks,
+	SP_Creep,
+	SP_Saddle_Creep,
 
 	 //these three currently ignored:
 	SP_Up,
@@ -178,6 +172,9 @@ enum SignatureInterfaceActions {
 	SIGM_Automarks_Cut_Lines,
 	SIGM_Automarks_Inner_Dots,
 	SIGM_Spine_Marks,
+	SIGM_No_Creep,
+	SIGM_Saddle_Creep,
+	SIGM_Custom_Creep,
 
 	SIGM_Tile_Repeat,
 	SIGM_Tile_StackAndFold,
@@ -415,6 +412,11 @@ Laxkit::MenuInfo *SignatureInterface::ContextMenu(int x,int y, int deviceid, Lax
 	menu->AddToggleItem(_("Inner dots"), SIGM_Automarks_Inner_Dots, 0, (siginstance->automarks & AUTOMARK_InnerDot) != 0);
 	menu->AddToggleItem(_("Spine marks"),SIGM_Spine_Marks,          0, sigimp->spine_marks);
 
+	menu->AddSep(_("Creep"));
+	menu->AddToggleItem(_("No creep"),     SIGM_No_Creep,     0, siginstance->use_creep == SignatureInstance::CREEP_None);
+	menu->AddToggleItem(_("Saddle creep"), SIGM_Saddle_Creep, 0, siginstance->use_creep == SignatureInstance::CREEP_Saddle);
+	menu->AddToggleItem(_("Custom creep"), SIGM_Custom_Creep, 0, siginstance->use_creep == SignatureInstance::CREEP_Custom);
+
 	menu->AddSep(_("Tile stacking")); // see SignatureInstance::TileStacking
 	menu->AddToggleItem(_("Repeat"),             SIGM_Tile_Repeat          , 0, siginstance->tile_stacking == SignatureInstance::Repeat);
 	menu->AddToggleItem(_("Stack then fold"),    SIGM_Tile_StackAndFold    , 0, siginstance->tile_stacking == SignatureInstance::StackThenFold);
@@ -525,13 +527,34 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 			else if (siginstance->automarks == AUTOMARK_Margins) makestr(area->text,"Automarks outside");
 			else if (siginstance->automarks == AUTOMARK_InnerDot) makestr(area->text,"Automarks inside");
 			else if (siginstance->automarks == (AUTOMARK_InnerDot | AUTOMARK_Margins)) makestr(area->text,"Automarks inside and outside");
-			remapHandles(SP_Automarks);
+			remapHandles(1);
 			needtodraw = 1;
 			return 0;
 
 		} else if (i == SIGM_Spine_Marks) {
 			if (!sigimp) return 0;
 			sigimp->spine_marks = !sigimp->spine_marks;
+			needtodraw = 1;
+			return 0;
+
+		} else if (i == SIGM_No_Creep) {
+			if (!siginstance) return 0;
+			siginstance->use_creep = SignatureInstance::CREEP_None;
+			remapHandles(1);
+			needtodraw = 1;
+			return 0;
+
+		} else if (i == SIGM_Saddle_Creep) {
+			if (!siginstance) return 0;
+			siginstance->use_creep = SignatureInstance::CREEP_Saddle;
+			remapHandles(1);
+			needtodraw = 1;
+			return 0;
+
+		} else if (i == SIGM_Custom_Creep) {
+			if (!siginstance) return 0;
+			siginstance->use_creep = SignatureInstance::CREEP_Custom;
+			remapHandles(1);
 			needtodraw = 1;
 			return 0;
 
@@ -566,6 +589,14 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 			return 0;
 		}
 		return 1;
+
+	} else if (!strcmp(mes,"saddle_creep")) {
+		const StrEventData *s = dynamic_cast<const StrEventData *>(data);
+		double dd = strtof(s->str, nullptr);
+		siginstance->saddle_creep = dd;
+		remapHandles(1);
+		needtodraw = 1;
+		return 0;
 
 	} else if (!strcmp(mes,"paperwidth")) {
 		const StrEventData *s=dynamic_cast<const StrEventData *>(data);
@@ -641,10 +672,12 @@ void SignatureInterface::createHandles()
 	controls.push(new ActionArea(SP_Paper_Name       , AREA_H_Slider, siginstance->partition->paper->name, ("Paper to use"),0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Paper_Width      , AREA_H_Slider, siginstance->partition->paper->name, ("Paper width"), 0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Paper_Height     , AREA_H_Slider, siginstance->partition->paper->name, ("Paper height"),0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Paper_Orient     , AREA_H_Slider, "--",        _("Paper orientation"),0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Current_Sheet    , AREA_H_Slider, "Sheet",     _("Current sheet"),    0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Num_Pages        , AREA_H_Slider, "Pages",     _("Wheel or drag changes number of pages"),      0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Automarks        , AREA_H_Slider, "Automarks", _("Wheel or click to select auto printer marks"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Paper_Orient     , AREA_H_Slider, "--",          _("Paper orientation"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Current_Sheet    , AREA_H_Slider, "Sheet",       _("Current sheet"),    0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Num_Pages        , AREA_H_Slider, "Pages",       _("Wheel or drag changes number of pages"),      0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Automarks        , AREA_H_Slider, "Automarks",   _("Wheel or click to select auto printer marks"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Creep            , AREA_H_Slider, "Creep",       _("Click to select creep type"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Saddle_Creep     , AREA_H_Slider, "SaddleCreep", _("Click to enter new saddle creep value"),0,1,c,0,c2));
 
 	c=color_inset;
 	controls.push(new ActionArea(SP_Inset_Top        , AREA_Handle, NULL, _("Inset top"),   2,1,c,0));
@@ -716,8 +749,8 @@ void SignatureInterface::remapHandles(int which)
 	LaxFont *font = curwindow->win_themestyle->normal;
 	dp->font(font, UIScale() * font->textheight());
 		
-	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
-	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf remapHandles, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	// DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
+	// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf remapHandles, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	ActionArea *area;
 	flatpoint *p;
@@ -784,6 +817,24 @@ void SignatureInterface::remapHandles(int which)
 		wwww = dp->textextent(area->text,-1, NULL,NULL)+hhhh;
 		area->SetRect(0,2*hhhh, wwww,hhhh);
 
+		// SP_Creep   --   at bottom left
+		area = control(SP_Creep);
+		if      (siginstance->use_creep == SignatureInstance::CREEP_None)   makestr(area->text, _("No creep"));
+		else if (siginstance->use_creep == SignatureInstance::CREEP_Saddle) makestr(area->text, _("Saddle creep"));
+		else if (siginstance->use_creep == SignatureInstance::CREEP_Custom) makestr(area->text, _("Custom creep"));
+		wwww = dp->textextent(area->text,-1, nullptr,nullptr)+hhhh;
+		area->SetRect(0,dp->Maxy - hhhh, wwww,hhhh);
+
+		// SP_Saddle_Creep
+		area = control(SP_Saddle_Creep);
+		if (siginstance->use_creep == SignatureInstance::CREEP_Saddle) {
+			area->hidden = false;
+			char str[50];
+			sprintf(str, "%.6g", siginstance->saddle_creep);
+			makestr(area->text, str);
+		} else area->hidden = true;
+		double wwww2 = dp->textextent(area->text,-1, nullptr,nullptr)+hhhh;
+		area->SetRect(wwww,dp->Maxy - hhhh, wwww2,hhhh);
 
 		//----------right side
 		 //SP_Current_Sheet
@@ -947,7 +998,7 @@ void SignatureInterface::remapHandles(int which)
 		area->hidden=!(hasfinal && foldlevel==signature->folds.n);
 	} //page area items
 
-	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf remapHandles end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf remapHandles end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 }
 
 
@@ -1007,8 +1058,8 @@ int SignatureInterface::Refresh()
 	if (firsttime) { remapHandles(); firsttime=0; }
 
 
-	DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
-	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	// DBG DisplayerCairo *ddp=dynamic_cast<DisplayerCairo*>(dp);
+	// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	double patternheight=siginstance->PatternHeight();
 	double patternwidth =siginstance->PatternWidth();
@@ -1043,7 +1094,7 @@ int SignatureInterface::Refresh()
 	if (siginstance->partition->insetbottom) dp->drawline(0,siginstance->partition->insetbottom,  w, siginstance->partition->insetbottom);
 
 
-	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw pattern, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw pattern, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	 //------------------draw fold pattern in each tile
 	double ew=patternwidth/(signature->numvfolds+1);
@@ -1165,7 +1216,7 @@ int SignatureInterface::Refresh()
 					 //show thumbnails
 					if (foldlevel==0) {
 						if (showthumbs && document && i-1>=0 && i-1<document->pages.n) {
-							DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh show thumbs, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+							// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh show thumbs, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 							 //draw page i in box defined by pts
 							thumb=document->pages.e[i-1]->Thumbnail();
@@ -1216,7 +1267,7 @@ int SignatureInterface::Refresh()
 								dp->PopAxes();
 
 							}
-							DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh show thumbs end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+							// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh show thumbs end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 						}
 					}
 
@@ -1237,7 +1288,7 @@ int SignatureInterface::Refresh()
 			} //if location rr,cc hasface
 
 
-			DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw final decs, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+			// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw final decs, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 			 //draw markings for final page binding edge, up, trim, margin
 			 //draws only when totally folded
@@ -1385,7 +1436,7 @@ int SignatureInterface::Refresh()
 	}
 
 
-	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh fold indicator, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh fold indicator, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	 //draw fold indicator overlays on left side of screen
 	dp->LineAttributes(-1, LineSolid, CapButt, JoinMiter);
@@ -1422,13 +1473,13 @@ int SignatureInterface::Refresh()
 	dp->DrawReal();
 
 
-	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw stacks, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw stacks, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	 //-----------------draw stacks
 	drawStacks();
 
 
-	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw handles, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh draw handles, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	 //-----------------draw control handles
 	ActionArea *area;
@@ -1525,7 +1576,7 @@ int SignatureInterface::Refresh()
 		dp->DrawReal();
 	}
 
-	DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
+	// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 	return 0;
 }
@@ -2289,6 +2340,22 @@ void SignatureInterface::SetPaperFromInstance(SignatureInstance *sig)
 	ShowThisPaperSpread(i);
 }
 
+void SignatureInterface::NewLengthInputWindow(const char *name, ActionArea *area, const char *message, double startvalue, int units)
+{
+	DoubleBBox bounds(area->minx,area->maxx+area->boxwidth(), area->miny,area->maxy);
+	Utf8String str;
+	if (units == 0) {
+		str.Sprintf("%.8g", startvalue);
+	} else {
+		UnitManager *unitmanager = GetUnitManager();
+		char *unit = nullptr; // *** TODO! this should be const
+		unitmanager->UnitInfoId(units, nullptr, &unit, nullptr, nullptr, nullptr, nullptr);
+		str.Sprintf("%.10g %s", startvalue, unit);
+	}
+
+	viewport->SetupInputBox(object_id, name, str.c_str(), message, bounds);
+}
+
 int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *d)
 {
 	if (!(buttondown.isdown(d->id,LEFTBUTTON))) return 1;
@@ -2353,6 +2420,26 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 			PaperSizeWindow *psizewindow = new PaperSizeWindow(nullptr, "PaperSizeWindow", _("Paper Size"), ANXWIN_REMEMBER | ANXWIN_ESCAPABLE, object_id, "papersize", 
 										paper, false, false, false, false);
 			app->rundialog(psizewindow);
+			return 0;
+
+		} else if (onoverlay == curhandle && onoverlay == SP_Creep) {
+			MenuInfo *menu = new MenuInfo();
+			menu->AddToggleItem(_("No creep"),     SIGM_No_Creep,     0, siginstance->use_creep == SignatureInstance::CREEP_None);
+			menu->AddToggleItem(_("Saddle creep"), SIGM_Saddle_Creep, 0, siginstance->use_creep == SignatureInstance::CREEP_Saddle);
+			menu->AddToggleItem(_("Custom creep"), SIGM_Custom_Creep, 0, siginstance->use_creep == SignatureInstance::CREEP_Custom);
+
+			app->rundialog(new PopupMenu("Viewport Menu","Viewport Menu", 0,
+									 0,0,0,0,1,
+									 object_id,"menuevent",
+									 d->id,
+									 menu,1, nullptr,
+									 TREESEL_LEFT));
+			return 0;
+
+		} else if (onoverlay == curhandle && onoverlay == SP_Saddle_Creep) {
+			// double d = siginstance->saddle_creep;
+			ActionArea *area = control(SP_Saddle_Creep);
+			NewLengthInputWindow(_("Saddle creep"), area, "saddle_creep", siginstance->saddle_creep);
 			return 0;
 
 		} else if (onoverlay>=SP_FOLDS) {
@@ -2789,7 +2876,7 @@ int SignatureInterface::MouseMove(int x,int y,unsigned int state,const Laxkit::L
 	buttondown.move(mouse->id,x,y, &lx,&ly);
 
 	if (onoverlay!=SP_None) {
-		if (onoverlay<SP_FOLDS) {
+		if (onoverlay < SP_FOLDS) {
 			 //dragging a handle
 			flatpoint d=dp->screentoreal(x,y)-dp->screentoreal(lx,ly);
 			if ((state&LAX_STATE_MASK)==ShiftMask) d*=.1;

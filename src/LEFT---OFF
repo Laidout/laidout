@@ -1731,8 +1731,8 @@ FileDialog filedialog:
     need a click to generate preview, gen preview in background
   file dialog, single click should not enter directory, double click should do that
   bug: layer on a page won't allow collapse/expand
-  DONE bug: sort caseless, other sorts not working
-  should remember sorting style
+  bug: sort caseless, other sorts not working
+  should remember sorting style, and initialize with specified sorting style
   should be able to click on column header to sort
   focus should start on file line
   ^l should shift focus to file line
@@ -1751,11 +1751,6 @@ FileDialog filedialog:
   DONE bug: overwrite not escapable?
   DONE enter on file line: if has dir, change dir, else trigger save
   DONE should probably have a scroll bar
-
-ShortcutWindow2
-  remove old ShortcutWindow
-  bug: area list is missing
-  "new action" doesn't work, just adds first action from existing menu
 
 dual monitors: multi monitor: multimonitor
   open in same screen as mouse
@@ -1939,6 +1934,11 @@ themes:
   DONE laxprofile not working
 
 laxkit:
+  remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo.
+    remove displayer-xlib
+    remove fontmanager-xlib
+    remove configure hooks
+
   if you click on a backgrounded window when a dialog is up, the dialog should be circulated to front
   rulerwin: would be nice to resize the tiny text labels with control-wheel
   Button: icon should shift slightly when pressed, like text does
@@ -2239,7 +2239,7 @@ paperinterface: papergroupinterface papergroup interface papergroups:
 
 new PaperSizeWindow:
   preview image of paper
-  bug: rowframe WrapToExtent() doesn't work
+  bug: rowframe WrapToExtent() doesn't work. close, then reopen has wrong render bounds
   DONE integrate with:
     DONE signature interface
     DONE singles editor
@@ -2306,7 +2306,12 @@ calculator/scripting
   DONE bug: can't remove dict elements
   DONE bug: var a={a:1,b:2}, cannot add to dict, like a.c = 234; a["d"] = 5655
 
-shortcut dialog: shortcuts: shortcut manager shortcutmanager
+ShortcutWindow2
+  DONE remove old ShortcutWindow
+  bug: area list is missing
+  "new action" doesn't work, just adds first action from existing menu
+
+shortcut dialog: shortcuts: shortcut manager shortcutmanager:
   bug: ObjectInterface Duplicate objects has key u0000 ???
   bug: on pulling up window, action list shows current tool, but that is not highlighted in area list
   bug: keyboard display stretched way too much, general window arrangement is really bad
@@ -2338,8 +2343,8 @@ book assembly: partitioninterface:
     Document:
     	PtrStack<PageSet> pagesets;
     -> this would allow, for instance, designing book cover in same doc as body pages
-job control:
-  store number of target copies, to help coordinate book assembly from partitioned papers
+job control: jobs: job management:
+  store number of target copies, to help coordinate book assembly from partitioned papers and provide stats
 
 signature editor:  Signature editor Signature Editor signatureeditor: signatures: signatureinterface: signature:
   implement signature marks along spine
@@ -2387,9 +2392,14 @@ signature editor:  Signature editor Signature Editor signatureeditor: signatures
   paper select should give hints as to whether paper size can hold actual final size
   detect non staplable binding edge, show red rather than green
   test impose-only for all imposition types
-  be able to specify single sided.. allows bound accordian foldings?
+  be able to specify single sided.. allows bound accordion foldings?
   implement auto creep: default total_creep = (numpages-1)/4 * paper_thickness
+    fix with inserts.. only top most siginstance should have the creep?
+    indicate shift in interface
+    trim affected areas from actual page spreads
+  	have more helpers for creating creep value, like hint to make a mockup, or calculate from a stack of papers to reduce error
   implement manual creep transforms: rotate around page center, and translate
+    helper to define a few key transforms, and interpolate for other cells?
 
   DONE needs indicator of number of groups, show 3/10 for current sheet in little box above stack
   DONE ux: folding grey blends in with grey background
@@ -2900,7 +2910,7 @@ Image import chain:
   2. svg|SVG: inkscape command line export
   3. other external renderer: asymptote, structure synth, sunflow, pov-ray, lilypond, latex, graphviz, gnuplot
   3. * images: graphicsmagick
-  4. jpg, png, gif, tiff: Imlib2
+  4. jpg, png, gif, tiff: gm
 
 thumbnails:
   generate thumb for laidout files from current page or current view if no current page?
@@ -2951,10 +2961,6 @@ createlaidoutrc() should migrate to a LaidoutPrefs::CreateLaidoutrc(), not a dir
 
 laidoutprefs:
   DONE finish implementing saveable shadow_color and current_page_color settings
-
-remove imlib/"xlib" font, image, and render backends, replace with GraphicsMagick and cairo, keep imlib loader but load to cairo image only
-  remove displayer-xlib
-  remove fontmanager-xlib
 
 image loaders:
   implement loader priorities

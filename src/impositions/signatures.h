@@ -45,7 +45,9 @@ class Fold : public Value
 	virtual Value *duplicateValue();
 };
 
+
 //--------------------------------------- FoldedPageInfo ---------------------------------------
+
 class FoldedPageInfo
 {
  public:
@@ -54,17 +56,27 @@ class FoldedPageInfo
 	int finalxflip, finalyflip;
 	int finalindexfront, finalindexback;
 
-	double rotation; //minute adjustment when putting page to paper
-	Laxkit::flatpoint shift; //minute adjustment when putting page to paper
-
 	Laxkit::NumStack<int> pages; //what pages are actually there, r,c are pushed
 
 	FoldedPageInfo();
 };
 
+class CustomCreep
+{
+  public:
+	bool   is_auto  = false;  // meaning this instance interpolated from other CustomCreep
+	int    sheet    = -1;
+	int    row      = -1;
+	int    column   = -1;
+	double rotation = 0;
+	Laxkit::flatpoint shift;
+};
+
+bool operator==(const CustomCreep &a, const CustomCreep &b);
 
 
 //------------------------------------ Signature -----------------------------------------
+
 ObjectDef *makeSignatureImpositionObjectDef();
 
 class Signature : public Value
@@ -174,7 +186,8 @@ class SignatureInstance : public Value
 
 	int base_sheets_per_signature; // number of sheets from only this instance, without partition stacking
 	int sheetspersignature; //Current number of sheets including partition stacking. May change if autoaddsheets!=0
-	int autoaddsheets;
+	bool autoaddsheets;
+
 
 	int automarks;
 	LaxInterfaces::LineStyle *linestyle; //for optional automatic printer marks
@@ -190,7 +203,10 @@ class SignatureInstance : public Value
 	TileStacking tile_stacking = Repeat;
 	int stacking_order = LAX_LRTB;
 
-	double creep; //amount of creep for this signature stack, size difference between innermost and outer page
+	enum CreepType { CREEP_None, CREEP_Saddle, CREEP_Custom };
+	CreepType use_creep = CREEP_None;
+	double saddle_creep = 0.; //amount of creep for this signature stack, position difference between innermost and outer page, usually num_sheets*page_thickness
+	Laxkit::NumStack<CustomCreep> custom_creep;
 
 	SignatureInstance *next_insert,*prev_insert; //insert this into this one at middle when folded up 
 	SignatureInstance *next_stack, *prev_stack; //another signature laid on side of this one
