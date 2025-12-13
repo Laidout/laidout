@@ -27,16 +27,23 @@
 #include "../language.h"
 #include "../laidout.h"
 #include "../core/stylemanager.h"
-#include "../printing/psout.h"
-#include "../impositions/singles.h"
 #include "../core/utils.h"
+#include "../dataobjects/limagedata.h"
+#include "../impositions/singles.h"
+#include "../ui/headwindow.h"
+
 #include "pdfpodofo.h"
 
-#include <iostream>
-#define DBG 
+#ifdef None
+#undef None
+#endif
+#ifdef Bool
+#undef Bool
+#endif
+#include <podofo/podofo.h>
 
+#include <lax/debug.h>
 
-using namespace std;
 using namespace Laxkit;
 using namespace LaxInterfaces;
 
@@ -61,12 +68,12 @@ namespace Laidout {
 //! Tells the Laidout application that there's a new filter in town.
 void installPodofoFilter()
 {
-	PodofoExportFilter *pdfout = new PodofoExportFilter(4);
-	pdfout->GetObjectDef();
-	laidout->PushExportFilter(pdfout);
+	// PodofoExportFilter *pdfout = new PodofoExportFilter(4);
+	// pdfout->GetObjectDef();
+	// laidout->PushExportFilter(pdfout);
 	
-	//PodofoImportFilter *pdfin = new PdfInputFilter;
-	//laidout->importfilters(pdfin);
+	PodofoImportFilter *pdfin = new PodofoImportFilter;
+	laidout->PushImportFilter(pdfin);
 }
 
 
@@ -81,22 +88,31 @@ class PdfPageProxy : public LImageData
   	PaperStyle *paperstyle = nullptr;
 
 
-  	PdfPageProxy(int i, PaperStyle *style);
+  	PdfPageProxy(const char *file, int i, PaperStyle *style, int preview_size);
   	virtual ~PdfPageProxy();
   	virtual const char *whattype() { return "PdfPageProxy"; }
 };
 
-PdfPageProxy::PdfPageProxy(const char *filename, int i, PaperStyle *style)
+PdfPageProxy::PdfPageProxy(const char *file, int i, PaperStyle *style, int preview_size)
 {
 	index = i;
 	paperstyle = style;
 	if (paperstyle) paperstyle->inc_count();
+	if (preview_size > 0) preview_max_px = preview_size;
 
 	if (filename) {
 		pdf_file = filename;
-		LoadImage(filename, nullptr, preview_max_px,preview_max_px, false, i);
-		BuildPreview(preview_max_px);
+		LoadPreviewed(filename, i, preview_max_px, false, nullptr);
+		// BuildPreview(preview_max_px);
 	}
+
+	double w = paperstyle->w();
+	double h = paperstyle->h();
+	double scale  = w/maxx;
+	double scaley = h/maxy;
+	if (scaley < scale) scale = scaley;
+	xaxis(scale*xaxis());
+	yaxis(scale*yaxis());
 }
 
 PdfPageProxy::~PdfPageProxy()
@@ -119,6 +135,7 @@ const char *PodofoImportFilter::VersionName()
 
 ObjectDef *PodofoImportFilter::GetObjectDef()
 {
+	// import_as_vector
 	return nullptr; // ***
 }
 
@@ -149,11 +166,12 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 	int preview_size = 256;
     double page_dpi = config->dpi;
     if (page_dpi <= 0) page_dpi = 300;
-    double preview_dpi = 72;
+    // double preview_dpi = 72;
+    int docpagenum = 0;
 
 	if (!group && doc) {
 		 //document page to start dumping onto
-		int docpagenum = in->topage; //the page in laidout doc to start dumping into
+		docpagenum = config->topage; //the page in laidout doc to start dumping into
 		int curdocpage; //the current page in the laidout document, used in loop below
 		if (docpagenum < 0) docpagenum = 0;
 
@@ -166,12 +184,12 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 	}
 
 
-	PoDoFo::PdfMemDocument doc;
-    doc.Load(file);
+	PoDoFo::PdfMemDocument pdf_doc;
+    pdf_doc.Load(file);
 
 	// find number of pages
-    const PoDoFo::PdfPageCollection &pages = doc.GetPages();
-    int num_pages = doc.GetPages().GetCount();
+    const PoDoFo::PdfPageCollection &pdf_pages = pdf_doc.GetPages();
+    int num_pages = pdf_doc.GetPages().GetCount();
 
     DBGL("num pages: "<< num_pages);
 
@@ -179,35 +197,38 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 
     // process pages
     for (int c = 0; c < num_pages; c++) {
-        const PoDoFo::PdfPage &page = pages.GetPageAt(c);
-        Rect rect = page.GetRect();
+        const PoDoFo::PdfPage &page = pdf_pages.GetPageAt(c);
+        PoDoFo::Rect rect = page.GetRect();
         unsigned page_num = page.GetPageNumber();
         double page_width = rect.GetRight() - rect.GetLeft(); // these are points, 72 pts == 1 inch
         double page_height = rect.GetTop() - rect.GetBottom();
 
         DBGL("("<<page_num<<") xywh: "<< rect.GetLeft()<<","<<rect.GetBottom()<<','<<rect.GetRight()<<','<<rect.GetTop());
 
-        const PdfContents *contents = page.GetContents();
-        charbuff buff;
+        const PoDoFo::PdfContents *contents = page.GetContents();
+        PoDoFo::charbuff buff;
         contents->CopyTo(buff);
         DBGL(buff);
 
         int landscape = 0;
         PaperStyle *paperstyle = GetNamedPaper(page_width, page_height, &landscape, 0, nullptr, 1e-3);
-        if (paperstyle) paperstyle = paperstyle->duplicate();
+        if (paperstyle) paperstyle = dynamic_cast<PaperStyle*>(paperstyle->duplicate());
         else paperstyle = new PaperStyle(_("Custom"), page_width/72, page_height/72, landscape, page_dpi, "cm");
 
 		// generate previews for pages via gm
-        PdfPageProxy *page_image = new PdfPageProxy(c, paperstyle);
-        page_image->LoadImage(file, nullptr, preview_size,preview_size, 0,1, c);
+        PdfPageProxy *page_image = new PdfPageProxy(file, c, paperstyle, preview_size);
+        // page_image->LoadImage(file, nullptr, preview_size,preview_size, 0,1, c);
         pages.push(page_image);
     }
 
     // make a new doc if necessary
    	if (!group && !doc) {
-   		const char *nme = lax_basename(filename);
+   		const char *nme = lax_basename(file);
    		if (!nme) nme = Untitled_name();
+   		Imposition *imp = new Singles;
    		doc = new Document(imp, nme);
+   		imp->dec_count();
+   		doc->imposition->SetPaperSize(pages.e[0]->paperstyle);
 
    		int num_pages_needed = pages.n;
 		if (docpagenum + num_pages_needed >= doc->pages.n) {
@@ -227,500 +248,135 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 		if (curdocpage >= doc->pages.n) {
 			doc->NewPages(-1, (curdocpage+1)-doc->pages.n);
 		}
-		group = dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0));  // pick layer 0 of the page
 	}
 
+	for (int c = 0; c < num_pages; c++) {
+		group = dynamic_cast<Group *>(doc->pages.e[docpagenum + c]->layers.e(0));
+		group->push(pages.e[c]);
+	}
+
+	if (doc && doc != config->doc) {
+		laidout->project->Push(doc);
+		if (!config->no_new_windows) laidout->app->addwindow(newHeadWindow(doc));
+	}
+	
 	return 1;
 }
 
 
 // //------------------------------------ PodofoExportConfig ----------------------------------
 
-// //! For now, just returns a new DocumentExportConfig.
-// /*! \todo Options:
-//  * 		compression rating
-//  *		compression type for image data, lossy (dctdecode) or lessless (zip?)
-//  */
-// Value *newPodofoExportConfig()
-// {
-// 	DocumentExportConfig *d = new DocumentExportConfig;
-// 	for (int c = 0; c < laidout->exportfilters.n; c++) {
-// 		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf Podofo")) 
-// 			d->filter = laidout->exportfilters.e[c];
-// 	}
-// 	return d;
-// }
+//! For now, just returns a new DocumentExportConfig.
+/*! \todo Options:
+ * 		compression rating
+ *		compression type for image data, lossy (dctdecode) or lessless (zip?)
+ */
+Value *newPodofoExportConfig()
+{
+	DocumentExportConfig *d = new DocumentExportConfig;
+	for (int c = 0; c < laidout->exportfilters.n; c++) {
+		if (!strcmp(laidout->exportfilters.e[c]->Format(),"Pdf Podofo")) 
+			d->filter = laidout->exportfilters.e[c];
+	}
+	return d;
+}
 
 
 // //------------------------------------ PodofoExportFilter ----------------------------------
 	
-// /*! \class PodofoExportFilter
-//  * \brief Filter for exporting PDF 1.3 or 1.4 using libpodofo.
-//  */
-// /*! \var int PodofoExportFilter::pdf_version
-//  * \brief 4 for 1.4, 3 for 1.3.
-//  */
+/*! \class PodofoExportFilter
+ * \brief Filter for exporting PDF using libpodofo.
+ */
 
 
-// /*! which==3 is 1.3, 4 is 1.4. However, only 1.4 is implemented.
-//  */
-// PodofoExportFilter::PodofoExportFilter()
-// {
-// 	pdf_version = "1.4";
-// 	flags = FILTER_MULTIPAGE;
-// }
+PodofoExportFilter::PodofoExportFilter()
+{
+	pdf_version = "1.4";
+	flags = FILTER_MULTIPAGE;
+}
 
-// const char *PodofoExportFilter::Version()
-// {
-// 	return pdf_version.c_str();
-// }
+const char *PodofoExportFilter::Version()
+{
+	return pdf_version.c_str();
+}
 
-// const char *PodofoExportFilter::VersionName()
-// {
+const char *PodofoExportFilter::VersionName()
+{
 
-// 	if (pdf_version == "1.4") return _("Podofo Pdf 1.4");
-// 	return _("Podofo Pdf 1.3");
-// }
+	if (pdf_version == "1.4") return _("Podofo Pdf 1.4");
+	return _("Podofo Pdf 1.3");
+}
 
 
-// //! Try to grab from stylemanager, and install a new one there if not found.
-// /*! The returned def need not be dec_counted.
-//  */
-// ObjectDef *PodofoExportFilter::GetObjectDef()
-// {
-// 	ObjectDef *styledef;
-// 	styledef = stylemanager.FindDef("PodofoExportConfig");
-// 	if (styledef) return styledef; 
+//! Try to grab from stylemanager, and install a new one there if not found.
+/*! The returned def need not be dec_counted.
+ */
+ObjectDef *PodofoExportFilter::GetObjectDef()
+{
+	ObjectDef *styledef;
+	styledef = stylemanager.FindDef("PodofoExportConfig");
+	if (styledef) return styledef; 
 
-// 	styledef = makeObjectDef();
-// 	makestr(styledef->name, "PodofoExportConfig");
-// 	makestr(styledef->Name, _("Pdf Podofo Export Configuration"));
-// 	makestr(styledef->description,_("Configuration to export a document to a pdf with podofo."));
-// 	styledef->newfunc = newPodofoExportConfig;
+	styledef = makeObjectDef();
+	makestr(styledef->name, "PodofoExportConfig");
+	makestr(styledef->Name, _("Pdf Podofo Export Configuration"));
+	makestr(styledef->description,_("Configuration to export a document to a pdf with podofo."));
+	styledef->newfunc = newPodofoExportConfig;
 
-// 	stylemanager.AddObjectDef(styledef,0);
-// 	styledef->dec_count();
+	stylemanager.AddObjectDef(styledef,0);
+	styledef->dec_count();
 
-// 	return styledef;
-// }
-
-
-
-// ////--------------------------------*************
-// //class PdfFilterConfig
-// //{
-// // public:
-// //	char untranslatables;   //whether laidout objects not suitable for pdf should be ignored, rasterized, or approximated
-// //	char preserveunknown;   //any unknown attributes should be attached as "metadata" to the object in question on readin
-// //							//these would potentially be written back out on an pdf export?
-// //							
-// //	ObjectDef *OutputObjectDef(); //for auto config dialog creation
-// //	ObjectDef *InputObjectDef();
-// //};
-// ////--------------------------------
-
-// //-------------------------------------- pdf out -------------------------------------------
-
-// AffineStack transforms;
-// double current_dpi = 300;
-
-// //---------------------------- PdfObjInfo
-// static int o=1;//***DBG
+	return styledef;
+}
 
 
-// /*! \class PdfObjInfo
-//  * \brief Temporary class to hold info about pdf objects during export.
-//  */
-// class PdfObjInfo 
-// {
-//  public:
-// 	int i;//***DBG
-// 	unsigned long byteoffset;
-// 	char inuse; //'n' or 'f'
-// 	long number;
-// 	int generation;
-// 	PdfObjInfo *next;
-// 	char *data;//optional for writing out
-// 	long len; //length of data, just in case data has bytes with 0 value
-// 	unsigned long lo_object_id;
-// 	anObject *lo_object;
+//--------------------------------------- PDF Out main ------------------------------------
 
-// 	PdfObjInfo();
-// 	virtual ~PdfObjInfo();
-// };
+/*! Save the document as PDF.
+ *
+ * Files are not checked for existence. They are clobbered if they already exist, and are writable.
+ *
+ * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
+ * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
+ */
+int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+{
+	DocumentExportConfig *config = dynamic_cast<DocumentExportConfig *>(context);
+ 	if (!config) return 1;
 
-// PdfObjInfo::PdfObjInfo()
-// 	 : byteoffset(0), inuse('n'), number(0), generation(0), next(nullptr), data(nullptr), len(0)
-// {
-// 	i = o++; 
-// 	lo_object_id=0;
-// 	lo_object=nullptr;
-// 	DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
-// }
-// PdfObjInfo::~PdfObjInfo()
-// {
-// 	DBG cerr<<"delete PdfObjInfo i="<<i<<", number="<<number<<"..."<<endl;
-// 	if (next) delete next; 
-
-// }
-// //---------------------------- PdfPageInfo
-
-// /*! \class PdfPageInfo
-//  * \brief Temporary class to hold info about pdf page objects during export.
-//  */
-// class PdfPageInfo : public PdfObjInfo
-// {
-//  public:
-// 	int contents;
-// 	DoubleBBox bbox;
-// 	char *pagelabel;
-// 	Attribute resources;
-// 	int rotation;
-// 	int landscape;
-// 	bool clip;
-
-// 	PdfPageInfo() { pagelabel=nullptr; rotation=0; landscape=0; clip = false; }
-// 	virtual ~PdfPageInfo();
-// };
-
-// PdfPageInfo::~PdfPageInfo()
-// {
-// 	DBG cerr<<"   delete PdfPageInfo i="<<i<<", number="<<number<<"..."<<endl;
-// 	if (pagelabel) delete[] pagelabel; 
-// }
-
-// //----------------forward declarations
-
-// static void pdfColorPatch(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount,
-// 				  Attribute &resources, ColorPatchData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
-// static void pdfImage(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-// 					 LaxInterfaces::ImageData *img, ErrorLog &log,int &warning, DocumentExportConfig *config);
-// static void pdfImagePatch(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-// 					 LaxInterfaces::ImagePatchData *img, ErrorLog &log,int &warning, DocumentExportConfig *config);
-// static void pdfGradient(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-// 						LaxInterfaces::GradientData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
-// static void pdfPaths(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-// 						LaxInterfaces::PathsData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
-// static void pdfCaption(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-// 						LaxInterfaces::CaptionData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
-// static void pdfTextOnPath(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
-// 						LaxInterfaces::TextOnPath *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
-
-
-// //-------------------------------- pdfdumpobj
-
-// //! Internal function to dump out the object in PDF. Called by pdfout().
-// /*! \ingroup pdf
-//  * It is assumed that the transform of the object is applied here, rather than
-//  * before this function is called.
-//  *
-//  * Should be able to handle gradients, bez color patches, paths, and images
-//  * without significant problems, EXCEPT for the lack of decent transparency handling.
-//  *
-//  * New XObjects are created and written to f as needed, and pushed onto obj, which is assumed
-//  * to be the uppermost xobject already written to f. objs is the first.
-//  *
-//  * Besides XObjects, drawing commands are appended to stream, which is written out as an XObject
-//  * elsewhere, when a page is finished being processed.
-//  *
-//  * \todo *** must be able to do color management
-//  * \todo *** need integration of global units, assumes inches now. generally must work
-//  *    out what shall be the default working units...
-//  */
-// void pdfdumpobj(FILE *f,
-// 				PdfObjInfo *objs, 
-// 				PdfObjInfo *&obj,
-// 				char *&stream,
-// 				int &objectcount,
-// 				Attribute &resources,
-// 				LaxInterfaces::SomeData *object,
-// 				ErrorLog &log,
-// 				int &warning,
-// 				DocumentExportConfig *config,
-// 				bool ignore_filter = false,
-// 				bool use_transform = true)
-// {
-// 	if (!obj) return;
-// 	if (!object || !object->Visible()) return;
-
-// 	DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
-// 	char scratch[200];
-
-//     if (dobj && dobj->clip_path) {
-// 		PathsData *clip = dobj->clip_path;
-// 		double m[6];
-// 		if (use_transform) transform_mult(m, clip->m(), object->m());
-// 		else transform_copy(m, clip->m());
-// 		//transform_identity(m);
-
-// 		psPushCtm();
-// 		//psConcat(m);
-// 		sprintf(scratch,"q\n");
-
-// 		//sprintf(scratch,"q\n"
-// 				  //"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-// 					//m[0], m[1], m[2], m[3], m[4], m[5]); 
-// 		appendstr(stream,scratch);
-// 		//pdfSetClipToPath(stream, clip, 0, clip->m());
-// 		pdfSetClipToPath(stream, clip, 0, m);
-// 	}
-
-// 	Group *g = dynamic_cast<Group *>(object);
-//     if (g && g->filter && !ignore_filter) {
-//         pdfdumpobj(f,objs,obj,stream,objectcount,resources, g->FinalObject(), log,warning,config, true);
-
-// 		//remove clip
-// 		if (dobj && dobj->clip_path) {
-// 			//sprintf(scratch,"Q\n");
-// 			appendstr(stream,"Q\n");
-// 			psPopCtm();
-// 		}
-//         return; // *** this fails when children exist!!
-//     }
-
-	
-// 	 // push object transform
-// 	if (use_transform) {
-// 		psPushCtm();
-// 		psConcat(object->m());
-// 		sprintf(scratch,"q\n"
-// 				  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-// 					object->m((int)0), object->m(1), object->m(2), object->m(3), object->m(4), object->m(5)); 
-// 		appendstr(stream,scratch);
-// 	}
-	
-// 	if (!strcmp(object->whattype(),"Group")) {
-// 		for (int c=0; c<g->n(); c++) 
-// 			pdfdumpobj(f,objs,obj,stream,objectcount,resources,g->e(c),log,warning,config);
-
-// 	} else if (!strcmp(object->whattype(),"PathsData")) {
-// 		pdfPaths(f,objs,obj,stream,objectcount,resources,
-// 				dynamic_cast<PathsData *>(object), log,warning,config);
-
-// 	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
-// 		pdfImagePatch(f,objs,obj,stream,objectcount,resources,
-// 				dynamic_cast<ImagePatchData *>(object), log,warning,config);
-
-// 	} else if (!strcmp(object->whattype(),"ImageData")) {
-// 		pdfImage(f,objs,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), log,warning,config);
-
-// 	} else if (!strcmp(object->whattype(),"ColorPatchData")) {
-// 		pdfColorPatch(f,objs,obj,stream,objectcount,resources,dynamic_cast<ColorPatchData *>(object), log,warning,config);
-
-// 	} else if (!strcmp(object->whattype(),"GradientData")) {
-// 		pdfGradient(f,objs,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), log,warning,config);
-
-// 	} else if (!strcmp(object->whattype(),"CaptionData")) {
-// 		if (config->textaspaths) {
-// 			CaptionData *text = dynamic_cast<CaptionData*>(object);
-// 			SomeData *path = text->ConvertToPaths(false, nullptr);
-// 			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
-//             path->dec_count();
-// 		} else {
-// 			pdfCaption(f,objs,obj,stream,objectcount,resources,dynamic_cast<CaptionData *>(object), log,warning,config);
-// 		}
-
-// 	} else if (!strcmp(object->whattype(),"TextOnPath")) {
-// 		if (config->textaspaths) {
-// 			TextOnPath *text = dynamic_cast<TextOnPath*>(object);
-// 			SomeData *path = text->ConvertToPaths(false, nullptr);
-// 			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
-//             path->dec_count();
-// 		} else {
-// 			pdfTextOnPath(f,objs,obj,stream,objectcount,resources,dynamic_cast<TextOnPath*>(object), log,warning,config);
-// 		}
-
-// 	} else if (!strcmp(object->whattype(),"SomeDataRef")) {
-// 		//this can link to any object, in or out of the current page, but pdf pages are supposed to be self contained. vexing!
-// 		SomeDataRef *ref = dynamic_cast<SomeDataRef*>(object);
-// 		SomeData *refed = ref->GetFinalObject();
-// 		if (refed != nullptr) {
-// 			pdfdumpobj(f, objs, obj, stream, objectcount, resources, refed, log, warning, config, false, false);
-// 		}
-
-// 	} else {
-// 		//DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
-//         SomeData *dobje=nullptr;
-//         if (dobj) dobje=dobj->EquivalentObject();
-
-// 		//remove object transform, since we use a totally different one
-// 		if (use_transform) {
-// 			appendstr(stream,"Q\n");
-// 			psPopCtm(); 
-// 		}
-
-//         if (dobje) {
-//             dobje->Id(object->Id());
-
-//             pdfdumpobj(f,objs,obj,stream,objectcount,resources,dobje,log,warning,config);
-
-//             dobje->dec_count();
-
-//         } else { 
-//             setlocale(LC_ALL,"");
-//             char buffer[strlen(_("Cannot export %s objects to pdf."))+strlen(object->whattype())+1];
-//             sprintf(buffer,_("Cannot export %s objects to pdf."),object->whattype());
-//             log.AddMessage(object->object_id,object->nameid,nullptr, buffer,ERROR_Warning);
-//             setlocale(LC_ALL,"C");
-//             warning++;
-//         }
-
-// 		//remove clipping
-// 		if (dobj && dobj->clip_path) {
-// 			appendstr(stream,"Q\n");
-// 			psPopCtm();
-// 		}
-// 		return;
-
-// 	}
-	
-// 	 // pop object transform
-// 	if (use_transform) {
-// 		appendstr(stream,"Q\n");
-// 		psPopCtm();
-// 	}
-
-// 	//remove clipping
-// 	if (dobj && dobj->clip_path) {
-// 		appendstr(stream,"Q\n");
-// 		psPopCtm();
-// 	}
-// }
-
-// //! Output a pdf clipping path from outline.
-// /*! 
-//  * outline can be a group of PathsData, a SomeDataRef to a PathsData, 
-//  * or a single PathsData.
-//  *
-//  * Non-PathsData elements in a group does not break the printing.
-//  * Those extra objects are just ignored.
-//  *
-//  * Returns the number of single paths interpreted.
-//  *
-//  * If iscontinuing!=0, then doesn't install path yet.
-//  *
-//  * \todo *** currently, uses all points (vertex and control points)
-//  *   in the paths as a polyline, not as the full curvy business 
-//  *   that PathsData are capable of. when pdf output of paths is 
-//  *   actually more implemented, this will change..
-//  */
-// int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontinuing, const double *extra_m)
-// {
-// 	PathsData *path=dynamic_cast<PathsData *>(outline);
-
-// 	 //If is not a path, but is a reference to a path
-// 	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
-// 		SomeDataRef *ref;
-// 		 // skip all nested SomeDataRefs
-// 		do {
-// 			ref=dynamic_cast<SomeDataRef *>(outline);
-// 			if (ref) outline=ref->thedata;
-// 		} while (ref);
-// 		if (outline) path=dynamic_cast<PathsData *>(outline);
-// 	}
-
-// 	int n=0; //the number of objects interpreted
-// 	char scratch[200];
-	
-// 	 // If is not a path, and is not a ref to a path, but is a group,
-// 	 // then check that its elements 
-// 	if (!path && dynamic_cast<Group *>(outline)) {
-// 		Group *g=dynamic_cast<Group *>(outline);
-// 		SomeData *d;
-// 		double m[6];
-// 		for (int c=0; c<g->n(); c++) {
-// 			d=g->e(c);
-// 			 //add transform of group element
-// 			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-// 					d->m((int)0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
-// 			appendstr(stream,scratch);
-// 			n += pdfSetClipToPath(stream,g->e(c),1, nullptr);
-// 			transform_invert(m,d->m());
-// 			 //reverse the transform
-// 			sprintf(stream,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-// 					m[0], m[1], m[2], m[3], m[4], m[5]); 
-// 			appendstr(stream,scratch);
-// 		}
-// 	}
-	
-// 	if (!path) return n;
-	
-// 	 // finally append to clip path
-// 	Coordinate *start,*p;
-// 	flatpoint fp;
-// 	for (int c=0; c<path->paths.n; c++) {
-// 		start=p=path->paths.e[c]->path;
-// 		if (!p) continue;
-// 		do { p=p->next; } while (p && p!=start);
-// 		if (p==start) { // only include closed paths
-// 			n++;
-// 			p=start;
-// 			//-----
-// 			n += pdfaddpath(nullptr, p, stream, extra_m);
-// 			//----
-// 			//do {
-// 			//	fp = (extra_m ? transform_point(extra_m, p->fp) : p->fp);
-// 			//	sprintf(scratch,"%.10f %.10f %s\n",
-// 			//			fp.x,fp.y, (p==start?"m":"l"));
-// 			//	appendstr(stream,scratch);
-// 			//	p=p->next;	
-// 			//} while (p && p!=start);
-// 			//----
-
-// 			//appendstr(stream,"S\n");
-// 			appendstr(stream,"W n\n"); //define the clip
-// 		}
-// 	}
-	
-// //	if (n && !iscontinuing) {
-// //		appendstr(stream,"W n\n");
-// //	}
-// 	return n;
-// }
-
-// //--------------------------------------- PDF Out ------------------------------------
-
-
-// //! Save the document as PDF.
-// /*! Files are not checked for existence. They are clobbered if they already exist, and are writable.
-//  *
-//  * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
-//  * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
-//  *
-//  * Document tree is parsed to create a list of objects. Then the whole list is output at once.
-//  */
-// int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
-// {
-// 	DocumentExportConfig *config=dynamic_cast<DocumentExportConfig *>(context);
-// 	if (!config) return 1;
-
-// 	Document *doc = config->doc;
-// 	int layout    = config->layout;
-// 	Group *limbo  = config->limbo;
-// 	PaperGroup *papergroup  = config->papergroup;
-// 	if (!filename) filename = config->filename;
+	Document *doc = config->doc;
+	int layout    = config->layout;
+	Group *limbo  = config->limbo;
+	PaperGroup *papergroup  = config->papergroup;
+	if (!filename) filename = config->filename;
 	
 
-// 	 //we must have something to export...
-// 	if (!doc && !limbo) {
-// 		//|| !doc->imposition || !doc->imposition->paper)...
-// 		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
-// 		return 1;
-// 	}
+	// we must have something to export...
+	if (!doc && !limbo) {
+		log.AddMessage(_("Nothing to export!"),ERROR_Fail);
+		return 1;
+	}
 	
-// 	 //we must be able to open the export file location...
-// 	FILE *f=nullptr;
-// 	char *file=nullptr;
-// 	if (!filename) {
-// 		if (!doc || isblank(doc->saveas)) {
-// 			DBG cerr <<" cannot save, null filename, doc->saveas is null."<<endl;
+	Utf8String file = nullptr;
+	if (!filename) {
+		if (!doc || isblank(doc->saveas)) {
+			DBGW(" cannot save, null filename, doc->saveas is null.");
 			
-// 			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
-// 			return 2;
-// 		}
-// 		file=newstr(doc->saveas);
-// 		appendstr(file,".pdf");
-// 	} else file=newstr(filename);
+			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
+			return 2;
+		}
+		file = doc->saveas;
+		file.Append(".pdf");
+	} else file = filename;
+
+	//
+	// We need to scan for all PdfPageProxy. We may need to merge pdfs first.
+	// When we have a list of all existing pdf files to be merging,
+	// we do like podofoimpose did, and simply add new imposed pages,
+	// and then delete all the previously existing pages. That way, we
+	// don't have to do anything special to preserve resource links.
+	// 
+
 
 // 	f=open_file_for_writing(file,0,&log);
 // 	if (!f) {
@@ -737,8 +393,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 
 // 	 // initialize outside accessible ctm
 // 	transforms.ClearAxes();
-// 	psCtmInit();
-// 	psFlushCtms();
 
 // 	 // a fresh PDF is:
 // 	 //   header: %PDF-1.4
@@ -837,7 +491,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 			appendstr(stream,"q\n"
 // 							 "72 0 0 72 0 0 cm\n"); // convert from inches
 // 			//transforms.Multiply(Affine(72.,0.,0.,72.,0.,0.));
-// 			psConcat(72.,0.,0.,72.,0.,0.);
 // 			transforms.PushAndNewAxes(72.,0.,0.,72.,0.,0.);
 
 
@@ -847,7 +500,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 				sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 // 						m[0], m[1], m[2], m[3], m[4], m[5]); 
 // 				appendstr(stream,scratch);
-// 				psConcat(m);
 // 				transforms.PushAndNewAxes(m);
 // 			} else if (spread) {
 // 				//transform_invert(m, spread->path->m());
@@ -856,7 +508,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 				sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 // 						m[0], m[1], m[2], m[3], m[4], m[5]); 
 // 				appendstr(stream,scratch);
-// 				psConcat(m);
 // 				transforms.PushAndNewAxes(m);
 // 			}
 			
@@ -880,7 +531,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 				 // for each paper in paper layout..
 // 				for (int c2=0; c2<spread->pagestack.n(); c2++) {
 // 					PaperStyle *defaultpaper=doc->imposition->GetDefaultPaper();
-// 					psDpi(defaultpaper->dpi);
 // 					current_dpi = defaultpaper->dpi;
 					
 // 					pgindex = spread->pagestack.e[c2]->index;
@@ -890,14 +540,12 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 					 // transform to page
 // 					appendstr(stream,"q\n"); //save ctm
 // 					//transforms.PushAxes();
-// 					psPushCtm();
 // 					transforms.PushAxes();
 // 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
 // 					sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
 // 							m[0], m[1], m[2], m[3], m[4], m[5]); 
 // 					appendstr(stream,scratch);
 // 					transforms.Multiply(m);
-// 					psConcat(m);
 
 // 					 // set clipping region
 // 					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
@@ -921,8 +569,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 							appendstr(stream,"q\n"); //save ctm
 // 							appendstr(stream,scratch);
 // 							transforms.PushAndNewAxes(bleed->matrix);
-// 							psPushCtm();
-// 							psConcat(bleed->matrix);
 
 // 							for (int l = 0; l < otherpage->layers.n(); l++) {
 // 								pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,otherpage->layers.e(l),log,warning,config);
@@ -930,7 +576,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 
 // 							appendstr(stream,"Q\n"); //pop ctm, bleed transform
 // 							transforms.PopAxes();
-// 							psPopCtm();
 // 						}
 // 		            }
 
@@ -942,7 +587,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 
 // 					appendstr(stream,"Q\n"); //pop ctm, page transform
 // 					transforms.PopAxes();
-// 					psPopCtm();
 // 				}
 // 			}
 
@@ -950,20 +594,16 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 			if (papergroup) {
 // 				appendstr(stream,"Q\n"); //pop papergroup transform
 // 				transforms.PopAxes();
-// 				psPopCtm();
 // 			} else if (spread) {
 // 				appendstr(stream,"Q\n"); //pop papergroup transform
 // 				transforms.PopAxes();
-// 				psPopCtm();
 			
 // 			}
 // //			if (paperrotate>0) {
 // //				appendstr(stream,"Q\n"); //pop paper rotation transform
-// //				psPopCtm();
 // //			}
 // 			//appendstr(stream,"Q\n"); //pop  pt to inches conversion (not really necessary
 // 			//transforms.PopAxes();
-// 			//psPopCtm();
 
 
 
@@ -1208,10 +848,367 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 	 //*** double check that this is all that needs cleanup:
 // 	if (objs) delete objs;
 
-// 	DBG cerr <<"=================== end pdf out ========================\n";
+	DBGL("=================== end pdf out ========================");
 
-// 	return 0;
+	return 0;
+}
+
+
+
+
+
+//-------------------------------------- pdf helpers -------------------------------------------
+
+// AffineStack transforms;
+// double current_dpi = 300;
+
+// //---------------------------- PdfObjInfo
+// static int o=1;//***DBG
+
+
+// /*! \class PdfObjInfo
+//  * \brief Temporary class to hold info about pdf objects during export.
+//  */
+// class PdfObjInfo 
+// {
+//  public:
+// 	int i;//***DBG
+// 	unsigned long byteoffset;
+// 	char inuse; //'n' or 'f'
+// 	long number;
+// 	int generation;
+// 	PdfObjInfo *next;
+// 	char *data;//optional for writing out
+// 	long len; //length of data, just in case data has bytes with 0 value
+// 	unsigned long lo_object_id;
+// 	anObject *lo_object;
+
+// 	PdfObjInfo();
+// 	virtual ~PdfObjInfo();
+// };
+
+// PdfObjInfo::PdfObjInfo()
+// 	 : byteoffset(0), inuse('n'), number(0), generation(0), next(nullptr), data(nullptr), len(0)
+// {
+// 	i = o++; 
+// 	lo_object_id=0;
+// 	lo_object=nullptr;
+// 	DBG cerr<<"creating PdfObjInfo "<<i<<"..."<<endl;
 // }
+// PdfObjInfo::~PdfObjInfo()
+// {
+// 	DBG cerr<<"delete PdfObjInfo i="<<i<<", number="<<number<<"..."<<endl;
+// 	if (next) delete next; 
+
+// }
+// //---------------------------- PdfPageInfo
+
+// /*! \class PdfPageInfo
+//  * \brief Temporary class to hold info about pdf page objects during export.
+//  */
+// class PdfPageInfo : public PdfObjInfo
+// {
+//  public:
+// 	int contents;
+// 	DoubleBBox bbox;
+// 	char *pagelabel;
+// 	Attribute resources;
+// 	int rotation;
+// 	int landscape;
+// 	bool clip;
+
+// 	PdfPageInfo() { pagelabel=nullptr; rotation=0; landscape=0; clip = false; }
+// 	virtual ~PdfPageInfo();
+// };
+
+// PdfPageInfo::~PdfPageInfo()
+// {
+// 	DBG cerr<<"   delete PdfPageInfo i="<<i<<", number="<<number<<"..."<<endl;
+// 	if (pagelabel) delete[] pagelabel; 
+// }
+
+// //----------------forward declarations
+
+// static void pdfColorPatch(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount,
+// 				  Attribute &resources, ColorPatchData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
+// static void pdfImage(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+// 					 LaxInterfaces::ImageData *img, ErrorLog &log,int &warning, DocumentExportConfig *config);
+// static void pdfImagePatch(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+// 					 LaxInterfaces::ImagePatchData *img, ErrorLog &log,int &warning, DocumentExportConfig *config);
+// static void pdfGradient(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+// 						LaxInterfaces::GradientData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
+// static void pdfPaths(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+// 						LaxInterfaces::PathsData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
+// static void pdfCaption(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+// 						LaxInterfaces::CaptionData *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
+// static void pdfTextOnPath(FILE *f, PdfObjInfo *objs, PdfObjInfo *&obj, char *&stream, int &objectcount, Attribute &resources,
+// 						LaxInterfaces::TextOnPath *g, ErrorLog &log,int &warning, DocumentExportConfig *config);
+
+
+// //-------------------------------- pdfdumpobj
+
+// //! Internal function to dump out the object in PDF. Called by pdfout().
+// /*! \ingroup pdf
+//  * It is assumed that the transform of the object is applied here, rather than
+//  * before this function is called.
+//  *
+//  * Should be able to handle gradients, bez color patches, paths, and images
+//  * without significant problems, EXCEPT for the lack of decent transparency handling.
+//  *
+//  * New XObjects are created and written to f as needed, and pushed onto obj, which is assumed
+//  * to be the uppermost xobject already written to f. objs is the first.
+//  *
+//  * Besides XObjects, drawing commands are appended to stream, which is written out as an XObject
+//  * elsewhere, when a page is finished being processed.
+//  *
+//  * \todo *** must be able to do color management
+//  * \todo *** need integration of global units, assumes inches now. generally must work
+//  *    out what shall be the default working units...
+//  */
+// void pdfdumpobj(FILE *f,
+// 				PdfObjInfo *objs, 
+// 				PdfObjInfo *&obj,
+// 				char *&stream,
+// 				int &objectcount,
+// 				Attribute &resources,
+// 				LaxInterfaces::SomeData *object,
+// 				ErrorLog &log,
+// 				int &warning,
+// 				DocumentExportConfig *config,
+// 				bool ignore_filter = false,
+// 				bool use_transform = true)
+// {
+// 	if (!obj) return;
+// 	if (!object || !object->Visible()) return;
+
+// 	DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
+// 	char scratch[200];
+
+//     if (dobj && dobj->clip_path) {
+// 		PathsData *clip = dobj->clip_path;
+// 		double m[6];
+// 		if (use_transform) transform_mult(m, clip->m(), object->m());
+// 		else transform_copy(m, clip->m());
+// 		//transform_identity(m);
+
+// 		sprintf(scratch,"q\n");
+
+// 		//sprintf(scratch,"q\n"
+// 				  //"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+// 					//m[0], m[1], m[2], m[3], m[4], m[5]); 
+// 		appendstr(stream,scratch);
+// 		//pdfSetClipToPath(stream, clip, 0, clip->m());
+// 		pdfSetClipToPath(stream, clip, 0, m);
+// 	}
+
+// 	Group *g = dynamic_cast<Group *>(object);
+//     if (g && g->filter && !ignore_filter) {
+//         pdfdumpobj(f,objs,obj,stream,objectcount,resources, g->FinalObject(), log,warning,config, true);
+
+// 		//remove clip
+// 		if (dobj && dobj->clip_path) {
+// 			//sprintf(scratch,"Q\n");
+// 			appendstr(stream,"Q\n");
+// 		}
+//         return; // *** this fails when children exist!!
+//     }
+
+	
+// 	 // push object transform
+// 	if (use_transform) {
+// 		sprintf(scratch,"q\n"
+// 				  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+// 					object->m((int)0), object->m(1), object->m(2), object->m(3), object->m(4), object->m(5)); 
+// 		appendstr(stream,scratch);
+// 	}
+	
+// 	if (!strcmp(object->whattype(),"Group")) {
+// 		for (int c=0; c<g->n(); c++) 
+// 			pdfdumpobj(f,objs,obj,stream,objectcount,resources,g->e(c),log,warning,config);
+
+// 	} else if (!strcmp(object->whattype(),"PathsData")) {
+// 		pdfPaths(f,objs,obj,stream,objectcount,resources,
+// 				dynamic_cast<PathsData *>(object), log,warning,config);
+
+// 	} else if (!strcmp(object->whattype(),"ImagePatchData")) {
+// 		pdfImagePatch(f,objs,obj,stream,objectcount,resources,
+// 				dynamic_cast<ImagePatchData *>(object), log,warning,config);
+
+// 	} else if (!strcmp(object->whattype(),"ImageData")) {
+// 		pdfImage(f,objs,obj,stream,objectcount,resources,dynamic_cast<ImageData *>(object), log,warning,config);
+
+// 	} else if (!strcmp(object->whattype(),"ColorPatchData")) {
+// 		pdfColorPatch(f,objs,obj,stream,objectcount,resources,dynamic_cast<ColorPatchData *>(object), log,warning,config);
+
+// 	} else if (!strcmp(object->whattype(),"GradientData")) {
+// 		pdfGradient(f,objs,obj,stream,objectcount,resources,dynamic_cast<GradientData *>(object), log,warning,config);
+
+// 	} else if (!strcmp(object->whattype(),"CaptionData")) {
+// 		if (config->textaspaths) {
+// 			CaptionData *text = dynamic_cast<CaptionData*>(object);
+// 			SomeData *path = text->ConvertToPaths(false, nullptr);
+// 			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
+//             path->dec_count();
+// 		} else {
+// 			pdfCaption(f,objs,obj,stream,objectcount,resources,dynamic_cast<CaptionData *>(object), log,warning,config);
+// 		}
+
+// 	} else if (!strcmp(object->whattype(),"TextOnPath")) {
+// 		if (config->textaspaths) {
+// 			TextOnPath *text = dynamic_cast<TextOnPath*>(object);
+// 			SomeData *path = text->ConvertToPaths(false, nullptr);
+// 			pdfPaths(f,objs,obj,stream,objectcount,resources, dynamic_cast<PathsData *>(path), log,warning,config);
+//             path->dec_count();
+// 		} else {
+// 			pdfTextOnPath(f,objs,obj,stream,objectcount,resources,dynamic_cast<TextOnPath*>(object), log,warning,config);
+// 		}
+
+// 	} else if (!strcmp(object->whattype(),"SomeDataRef")) {
+// 		//this can link to any object, in or out of the current page, but pdf pages are supposed to be self contained. vexing!
+// 		SomeDataRef *ref = dynamic_cast<SomeDataRef*>(object);
+// 		SomeData *refed = ref->GetFinalObject();
+// 		if (refed != nullptr) {
+// 			pdfdumpobj(f, objs, obj, stream, objectcount, resources, refed, log, warning, config, false, false);
+// 		}
+
+// 	} else {
+// 		//DrawableObject *dobj=dynamic_cast<DrawableObject*>(object);
+//         SomeData *dobje=nullptr;
+//         if (dobj) dobje=dobj->EquivalentObject();
+
+// 		//remove object transform, since we use a totally different one
+// 		if (use_transform) {
+// 			appendstr(stream,"Q\n");
+// 		}
+
+//         if (dobje) {
+//             dobje->Id(object->Id());
+
+//             pdfdumpobj(f,objs,obj,stream,objectcount,resources,dobje,log,warning,config);
+
+//             dobje->dec_count();
+
+//         } else { 
+//             setlocale(LC_ALL,"");
+//             char buffer[strlen(_("Cannot export %s objects to pdf."))+strlen(object->whattype())+1];
+//             sprintf(buffer,_("Cannot export %s objects to pdf."),object->whattype());
+//             log.AddMessage(object->object_id,object->nameid,nullptr, buffer,ERROR_Warning);
+//             setlocale(LC_ALL,"C");
+//             warning++;
+//         }
+
+// 		//remove clipping
+// 		if (dobj && dobj->clip_path) {
+// 			appendstr(stream,"Q\n");
+// 		}
+// 		return;
+
+// 	}
+	
+// 	 // pop object transform
+// 	if (use_transform) {
+// 		appendstr(stream,"Q\n");
+// 	}
+
+// 	//remove clipping
+// 	if (dobj && dobj->clip_path) {
+// 		appendstr(stream,"Q\n");
+// 	}
+// }
+
+// //! Output a pdf clipping path from outline.
+// /*! 
+//  * outline can be a group of PathsData, a SomeDataRef to a PathsData, 
+//  * or a single PathsData.
+//  *
+//  * Non-PathsData elements in a group does not break the printing.
+//  * Those extra objects are just ignored.
+//  *
+//  * Returns the number of single paths interpreted.
+//  *
+//  * If iscontinuing!=0, then doesn't install path yet.
+//  *
+//  * \todo *** currently, uses all points (vertex and control points)
+//  *   in the paths as a polyline, not as the full curvy business 
+//  *   that PathsData are capable of. when pdf output of paths is 
+//  *   actually more implemented, this will change..
+//  */
+// int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontinuing, const double *extra_m)
+// {
+// 	PathsData *path=dynamic_cast<PathsData *>(outline);
+
+// 	 //If is not a path, but is a reference to a path
+// 	if (!path && dynamic_cast<SomeDataRef *>(outline)) {
+// 		SomeDataRef *ref;
+// 		 // skip all nested SomeDataRefs
+// 		do {
+// 			ref=dynamic_cast<SomeDataRef *>(outline);
+// 			if (ref) outline=ref->thedata;
+// 		} while (ref);
+// 		if (outline) path=dynamic_cast<PathsData *>(outline);
+// 	}
+
+// 	int n=0; //the number of objects interpreted
+// 	char scratch[200];
+	
+// 	 // If is not a path, and is not a ref to a path, but is a group,
+// 	 // then check that its elements 
+// 	if (!path && dynamic_cast<Group *>(outline)) {
+// 		Group *g=dynamic_cast<Group *>(outline);
+// 		SomeData *d;
+// 		double m[6];
+// 		for (int c=0; c<g->n(); c++) {
+// 			d=g->e(c);
+// 			 //add transform of group element
+// 			sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+// 					d->m((int)0), d->m(1), d->m(2), d->m(3), d->m(4), d->m(5)); 
+// 			appendstr(stream,scratch);
+// 			n += pdfSetClipToPath(stream,g->e(c),1, nullptr);
+// 			transform_invert(m,d->m());
+// 			 //reverse the transform
+// 			sprintf(stream,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+// 					m[0], m[1], m[2], m[3], m[4], m[5]); 
+// 			appendstr(stream,scratch);
+// 		}
+// 	}
+	
+// 	if (!path) return n;
+	
+// 	 // finally append to clip path
+// 	Coordinate *start,*p;
+// 	flatpoint fp;
+// 	for (int c=0; c<path->paths.n; c++) {
+// 		start=p=path->paths.e[c]->path;
+// 		if (!p) continue;
+// 		do { p=p->next; } while (p && p!=start);
+// 		if (p==start) { // only include closed paths
+// 			n++;
+// 			p=start;
+// 			//-----
+// 			n += pdfaddpath(nullptr, p, stream, extra_m);
+// 			//----
+// 			//do {
+// 			//	fp = (extra_m ? transform_point(extra_m, p->fp) : p->fp);
+// 			//	sprintf(scratch,"%.10f %.10f %s\n",
+// 			//			fp.x,fp.y, (p==start?"m":"l"));
+// 			//	appendstr(stream,scratch);
+// 			//	p=p->next;	
+// 			//} while (p && p!=start);
+// 			//----
+
+// 			//appendstr(stream,"S\n");
+// 			appendstr(stream,"W n\n"); //define the clip
+// 		}
+// 	}
+	
+// //	if (n && !iscontinuing) {
+// //		appendstr(stream,"W n\n");
+// //	}
+// 	return n;
+// }
+
+
+
 
 // //------------------------------- Color Patch Out ---------------------------------
 
@@ -1709,8 +1706,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 			 //img.transformPoint(flatpoint(img.maxx,(img.miny+img.maxy)/2)));
 
 // 	 // push axes
-// 	psPushCtm();
-// 	psConcat(img.m());
 // 	char scratch[100];
 // 	sprintf(scratch,"q\n"
 // 			  "%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
@@ -1721,7 +1716,6 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 
 // 	 // pop axes
 // 	appendstr(stream,"Q\n");
-// 	psPopCtm();
 // }
 
 // //--------------------------------------- pdfCaption() ----------------------------------------
@@ -2294,7 +2288,7 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 // 	appendstr(stream,buffer);
 
 // 	 //dash pattern
-// 	if (lstyle->use_dashes)
+// 	if (!lstyle->use_dashes)
 // 		appendstr(stream," [] 0 d\n"); //clear dash array
 // 	else {
 // 		sprintf(buffer," [%.10g %.10g] 0 d\n",lstyle->width,2*lstyle->width); //set dash array

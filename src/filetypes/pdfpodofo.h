@@ -45,30 +45,30 @@ class PodofoImportFilter : public ImportFilter
 };
 
 
-// //------------------------------------ PdfExportFilter ----------------------------------
-// class PodofoExportFilter : public ExportFilter
-// {
-//  protected:
-// 	Utf8String pdf_version;
+//------------------------------------ PdfExportFilter ----------------------------------
+class PodofoExportFilter : public ExportFilter
+{
+ protected:
+	Laxkit::Utf8String pdf_version;
 
-//  public:
-// 	PodofoExportFilter(int which);
-// 	virtual ~PodofoExportFilter() {}
-// 	virtual const char *Author() { return "Laidout"; }
-// 	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
+ public:
+	PodofoExportFilter();
+	virtual ~PodofoExportFilter() {}
+	virtual const char *Author() { return "Laidout"; }
+	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
 	
-// 	virtual const char *DefaultExtension() { return "pdf"; }
-// 	virtual const char *Format() { return "Pdf Podofo"; }
-// 	virtual const char *Version();
-// 	virtual const char *VersionName();
-// 	virtual const char *FilterClass() { return "document"; }
-// 	virtual ObjectDef *GetObjectDef();
+	virtual const char *DefaultExtension() { return "pdf"; }
+	virtual const char *Format() { return "Pdf Podofo"; }
+	virtual const char *Version();
+	virtual const char *VersionName();
+	virtual const char *FilterClass() { return "document"; }
+	virtual ObjectDef *GetObjectDef();
 
-// 	virtual int Out(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
+	virtual int Out(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
 
-// 	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
-// 	//virtual int Verify(Laxkit::anObject *context); //preflight checker
-// };
+	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
+	//virtual int Verify(Laxkit::anObject *context); //preflight checker
+};
 
 
 } // namespace Laidout
