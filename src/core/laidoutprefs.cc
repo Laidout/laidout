@@ -841,8 +841,6 @@ ExternalTool *LaidoutPreferences::GetDefaultTool(int category)
 	return external_tool_manager.GetDefaultTool(category);
 }
 
-
-
 /*! Returns a null terminated list.
  * You should delete the returned list with deletestrs(strs, 0).
  * file should be full path for file.

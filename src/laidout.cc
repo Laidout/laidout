@@ -111,6 +111,21 @@ const char *LaidoutVersion()
  * is perhaps a little more meaningful or something...
  */
 
+char **GetDefaultPreviewLocations(const char *file, const char *doc_path)
+{
+	char **bases = new char*[laidout->prefs.preview_file_bases.n + 1];
+	bases[laidout->prefs.preview_file_bases.n] = nullptr;
+
+	int i = 0;
+	for (int c = 0; c < laidout->prefs.preview_file_bases.n; c++) {
+		bases[i] = PreviewFileName(file, laidout->prefs.preview_file_bases.e[c], doc_path);
+		if (bases[i] != nullptr) i++;
+	}
+	for ( ; i < laidout->prefs.preview_file_bases.n; i++)
+		bases[i] = nullptr;
+
+	return bases;
+}
 
 
 //------------------------------- LaidoutApp --------------------------------------------
@@ -173,6 +188,7 @@ LaidoutApp::LaidoutApp()
 	ColorManager::SetDefault(colorManager);
 	colorManager->dec_count();
 
+	ImageLoader::GetPreviewFileList_func = GetDefaultPreviewLocations;
 
 	autosave_timerid = 0;
 	force_new_dialog = false;

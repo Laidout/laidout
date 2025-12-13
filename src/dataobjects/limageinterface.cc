@@ -37,7 +37,7 @@ class LImageDialog : public Laxkit::ImageDialog
 {
   protected:
   	char *doc_path;
-  	virtual char **GetPossiblePreviewFiles();
+  	// virtual char **GetPossiblePreviewFiles();
 
   public:
 	LImageDialog(anXWindow *parnt, unsigned long nowner, ImageInfo *inf, const char *document_path);
@@ -59,14 +59,14 @@ LImageDialog::~LImageDialog()
 	delete[] doc_path;
 }
 
-char **LImageDialog::GetPossiblePreviewFiles()
-{
-	if (isblank(imageinfo->filename)) return nullptr;
+// char **LImageDialog::GetPossiblePreviewFiles()
+// {
+// 	if (isblank(imageinfo->filename)) return nullptr;
 
-	char **dirs = laidout->prefs.DefaultPreviewLocations(imageinfo->filename, doc_path);
+// 	char **dirs = laidout->prefs.DefaultPreviewLocations(imageinfo->filename, doc_path);
 
-	return dirs;
-}
+// 	return dirs;
+// }
 
 
 //------------------------------- LImageInterface --------------------------------
