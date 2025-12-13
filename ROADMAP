@@ -12,6 +12,10 @@ VERSION 0.098
 (done) Fix Singles double sided
        Fix NetImposition double sided
        Make a 2d version of the 3d Net unwrapper
+       PDF podofo in, at least as 1 image per page as a proxy for purposes of imposition
+       PDF podofo out, remapping page proxies
+       Saddle stitch creep controls
+       Custom rotation and shift creep controls
 (done) Update svg in/out to use Inkscape's new view based multipage
 (done) Convert website to use hugo, make some new tutorials for really out of date ones
 (done) Import/export new Inkscape multipage art boards via expanded Singles imposition type
@@ -29,6 +33,7 @@ VERSION 0.098
 (done) Page Atlas exporter
 (done) Way to export pages as svg embedded into html
 (done) pick and choose export range, not single "from:start to:end", but like "1-3,5,19-20"
+(done) In image properties dialog, be able to select from various default preview configs
 
 (done) Clip paths
 (done) Clip path in place editing
@@ -54,7 +59,7 @@ VERSION 0.098
 
 (done) Convert backend to using Theme objects for easier adjusting in the future
 (done) Fix object bleeding across pages for signatures and nets (issue #12)
-(done) Make Imlib2 dependency optional, prepare replacement image loading with GraphicsMagick
+(done) Remove Imlib2 dependency, replace with GraphicsMagick+cairo
 (done) Replace x11-dev makedepend with custom script
 (done) Investigate AppImage creation (issue #10)
 (done) Be able to generate icons from source svg directly
@@ -72,13 +77,16 @@ VERSION 0.098
 
 VERSION 0.099
 -------------
-	   Adapt stack section of SignatureEditor/PaperPartition to be broader Book Assembly Editor
-       Update CI to not use travis (issue #28)
        debug previous version a bit
-       Undo/Redo
 
-       Rescale icons on ui_scale changes so icons aren't fuzzy (issue #16)
-       Better icon management with changing ui size. Just generate from svg on the fly always?
+       Adapt stack section of SignatureEditor/PaperPartition to be broader Book Assembly Editor
+       Work and turn/work and tumble
+       allow inserting net impositions as foldouts in regular Signature Imposition stacks
+       debug Net imposition interactive unwrapper, via optional opengl Polyptych
+       Signature editor: detect non staplable binding edge, show red rather than green
+       Signature editor: option to specify alignment of different size signature stacks
+
+       Undo/Redo for more than just object transforms
 
        engraver tool direction overlay should be cached
        engraver tool grow point mode
@@ -86,24 +94,16 @@ VERSION 0.099
        engraver tool, blockout needs to be more precise
        engraver tool, fully test tool effects when many objects selected
 
-       PDF in, at least as 1 image per page, for purposes of imposition
        pdf export, unicode capable
        Optimize pdf export to rescale to target dpi, and compress image data
 
        Global Settings window, so you don't have to manually tinker with laidoutrc
-       Tools should remember their settings
        Import Images dialog needs total reprogramming
+       Rescale icons on ui_scale changes so icons aren't fuzzy (issue #16)
+       Better icon management with changing ui size. Just generate from svg on the fly always?
+
        Tool scripting
        Scripted plugin interface
-       Clone Pattern Builder
-       Object tree window, allow rename, rearrange
-
-       Finish implementing double sided net impositions
-       allow inserting net impositions as foldouts in regular Signature Imposition stacks
-       debug Net imposition interactive unwrapper, via optional opengl Polyptych
-       Net imposition build net interface
-       Signature editor: detect non staplable binding edge, show red rather than green
-       Signature editor: option to specify alignment of different size signature stacks
 
        drag-n-drop text to and from the various text edits
 
@@ -112,7 +112,9 @@ VERSION 0.099
        Soup up the color box so one can recall previous colors, and/or integration with palette window
        color styles, so objects can refer to a named color, just change that named to change all
 
-       In image properties dialog, be able to select from various default preview configs
+       Tools should remember their settings
+       Clone Pattern Builder
+       Object tree window, allow rename, rearrange
        fix object transform handles for really small objects (handles should still be accessible)
        Clean up project load/save internals and dialogs
        Object and resource tags interface
@@ -130,12 +132,13 @@ VERSION 0.099
        Make a laxkit.pc and use it in Laidout build to simplify build process
        Python plugin
 
-       Collect for out
+       Collect resources for export
        export preview
-       Make sure scribus export works with 1.5, and can handle new clipping features
+       Make sure scribus import/export works with current scribus file format, and can handle new clipping features
        Scribus import should try to do something appropriate with page spreads >= 2 pages wide
        Scribus import should do something meaningful with original Scribus page bleed values
 
+       Update CI to not use travis, (issue #28)
        Flatpak creation, submit for Flathub (issue #11)
 
 VERSION 0.1 
@@ -147,7 +150,6 @@ VERSION 0.1
        When importing from an image list file, should be able to say if and when to auto-make previews
        Basic infrastructure for most things should be in place.
        Must be Stable, not merely "Stable"
-       Creep management controls
        graphical shell should also help find and set key shortcuts
        Construct an adequate command core, so that no X connection necessary for batch processing
        Improve open from template to be able to use names (defined in a file), not just filenames
@@ -165,7 +167,7 @@ VERSION 0.1
        CieLab color space
        Resource manager/style edit window
        a real PrintDialog that can configure itself based on printer info
-       non-hacky new document box that can retrieve printer capabilities, and adjust accordingly (ie grok ppds)
+       non-hacky new document box that can retrieve printer capabilities, and adjust accordingly
        all things must define their styledefs
        make it easy to add/remove/prioritize/replace import/export filters
        support for rendering the svg filters
@@ -212,8 +214,6 @@ Somehow be able to do simulated add-ins/foldouts from within any page of an impo
 use any path as a kind of tab stop
 Optional multi-key shortcuts?  
 Decide on adequate rendering backend: going with cairo for now, but that's only 8bit. gegl? antigrain? antigrain/freetype/harfbuzz/gm?
-GraphicsMagick/ImageMagick plugin or integration: benefits: a gazillion file formats, including EPS, and color profiles
-  Imlib chokes on really big image files, whereas this would not
 svgfont/cairo user font support.. too special of a case?
 Optional Midi controller usage
 gmic filter plugin
@@ -227,28 +227,25 @@ Stream/Story editor, maybe html export from streameditor?
 for plain postscript, there's bitmask, but no transparency. maybe optionally do simulation with dithered bitmask
 Cooperate with photo programs like KPhotoalbum, f-spot
 Make nets cooperate with Hugin/Enblend: plugin for panorama projection to/from nets?
-Work and turn/work and tumble
-openoffice files import
-Uniconverter support
+opendocument odf file import
+Uniconverter support? https://sk1project.net/uc2/
 Super import place tool, including recursive placement
 The other Postscript/Pdf gradients?: Triangle strip and Triangle Mesh
 fore edge printing
 fore edge sculpting
 hdr color support
-Vx support?
-Verse support?
+Verse support? https://github.com/verse/verse for realtime sharing of graphics data
 Content version control?
 dbus?
 3-d/vr interface support (mainly for hedron unwrapper)
-port to other os
-port to tablet, or subset functionality, like check out to tablet, work on lower res version, to later import to system with full resources
 Net/polyhedron layout 3-d previewer extra (maybe?? software BSP tree? opengl?) pdf 1.6 can embed rotatable 3-d
 Perhaps have animation support/mode, 1 page=1 frame or separate time slider and keyframes
 Akin to animation mode, have movie/sound objects available to html export, for instance?
 a FlexibleImposition for html/streamed output target?
 JDF,JTAPI support?
 Saveable undo stack(?) see https://people.csail.mit.edu/sarasu/history/ for inspiration. Also Xara has this.
-Implement cross platform
+port to tablet, or subset functionality, like check out to tablet, work on lower res version, to later import to system with full resources
+port to other os
 
 
 VERSION 1.0
