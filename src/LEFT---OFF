@@ -2348,11 +2348,11 @@ job control: jobs: job management:
 
 signature editor:  Signature editor Signature Editor signatureeditor: signatures: signatureinterface: signature:
   implement signature marks along spine
-    should be previewable in signature editor
-  	pad top/bottom for spine marks
-    more style options for spine marks: thickness, color
-    lenticular spine marks.. stretch goal along with fore-edge printing?
+  	better placement control pad top/bottom for spine marks
+    more style options for spine marks: thickness, color, gradient
+    DONE should be previewable in signature editor
   	DONE marks on spine edge per signature in diagonal pattern to easily tell stacking order when binding
+  fore-edge painting marks.. stretch goal along with fore-edge scultpting? https://en.wikipedia.org/wiki/Fore-edge_painting
   bug: edit imp from viewport, change page number, should it insert pages??
   bug: paper dialog doesn't remember
   bug: SOMETIMES SignatureInterface arrows not tracking correctly, especially left/right
@@ -2393,11 +2393,13 @@ signature editor:  Signature editor Signature Editor signatureeditor: signatures
   detect non staplable binding edge, show red rather than green
   test impose-only for all imposition types
   be able to specify single sided.. allows bound accordion foldings?
-  implement auto creep: default total_creep = (numpages-1)/4 * paper_thickness
-    fix with inserts.. only top most siginstance should have the creep?
+  implement auto saddle creep:
     indicate shift in interface
     trim affected areas from actual page spreads
-  	have more helpers for creating creep value, like hint to make a mockup, or calculate from a stack of papers to reduce error
+  	have more helpers for creating creep value, like hint to make a mockup, or compute with common rule of thumb: (numpages-1)/4 * paper_thickness
+  	replace the whole creep_units thing with LengthValue when it's ready
+  	DONE implement creep_units
+    DONE fix with inserts.. only top most siginstance should have the creep?
   implement manual creep transforms: rotate around page center, and translate
     helper to define a few key transforms, and interpolate for other cells?
 

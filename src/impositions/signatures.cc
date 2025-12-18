@@ -21,6 +21,7 @@
 #include <lax/interfaces/pathinterface.h>
 #include <lax/attributes.h>
 #include <lax/transformmath.h>
+#include <lax/units.h>
 
 #include <cassert>
 
@@ -1633,6 +1634,7 @@ SignatureInstance::SignatureInstance(Signature *sig, PaperPartition *paper)
 	base_sheets_per_signature = 1;
 	sheetspersignature = 1;
 	autoaddsheets      = 1;
+	creep_units        = Laxkit::UNITS_Default;
 
 	next_insert = nullptr;
 	prev_insert = nullptr;
@@ -1668,6 +1670,7 @@ int SignatureInstance::AddInsert(SignatureInstance *insert)
 	int                i = 1;
 	while (s->next_insert) { i++; s = s->next_insert; }
 	s->next_insert = insert;
+	insert->prev_insert = s;
 	return i;
 }
 
@@ -1741,8 +1744,10 @@ Value *SignatureInstance::duplicateValue()
 	sig->autoaddsheets      = autoaddsheets;
 	sig->tile_stacking      = tile_stacking;
 	sig->stacking_order     = stacking_order; 
+
 	sig->use_creep          = use_creep;
 	sig->saddle_creep       = saddle_creep;
+	sig->creep_units        = creep_units;
 	for (int c = 0; c < custom_creep.n; c++) {
 		if (c >= sig->custom_creep.n) {
 			sig->custom_creep.push(custom_creep.e[c]);
@@ -1774,8 +1779,10 @@ SignatureInstance *SignatureInstance::duplicateSingle()
 	sig->autoaddsheets      = autoaddsheets;
 	sig->tile_stacking      = tile_stacking;
 	sig->stacking_order     = stacking_order; 
+
 	sig->use_creep          = use_creep;
 	sig->saddle_creep       = saddle_creep;
+	sig->creep_units        = creep_units;
 	for (int c = 0; c < custom_creep.n; c++) {
 		if (c >= sig->custom_creep.n) {
 			sig->custom_creep.push(custom_creep.e[c]);
@@ -1980,6 +1987,14 @@ SignatureInstance *SignatureInstance::GetSignature(int stack,int insert)
 	return sig;
 }
 
+/*! Return the head of this stack. Convenience function to step to top most insert. */
+SignatureInstance *SignatureInstance::TopInstance()
+{
+	SignatureInstance *top = this;
+	while (top->prev_insert) top = top->prev_insert;
+	return top;
+}
+
 //! Return SignatureInstance that holds paper spread whichpaper.
 /*! There are two paper spreads per physical piece of paper.
  */
@@ -2127,17 +2142,45 @@ int SignatureInstance::NumStacks(int which)
 	return num;
 }
 
-/*! Return the number of inserts of this. If only *this exists, then 0 is returned.
+/*! Return the number of inserts after this. If only *this exists, then 0 is returned.
  */
 int SignatureInstance::NumInserts()
 {
-	SignatureInstance *sig=next_insert;
-	int n=0;
+	SignatureInstance *sig = next_insert;
+	int n = 0;
 	while (sig) {
 		n++;
-		sig=sig->next_insert;
+		sig = sig->next_insert;
 	}
 	return n;
+}
+
+/*! Return index in insert stack of this instance.
+ */
+int SignatureInstance::InsertIndex()
+{
+	int i = 0;
+	SignatureInstance *inst = this;
+	while (inst->prev_insert) {
+		i++;
+		inst = inst->prev_insert;
+	}
+	return i;
+}
+
+/*! Return position of this instance relative to next/prev_stack.
+ * Optionally return total number of stacks.
+ */
+int SignatureInstance::StackIndex(int *num_stacks_ret)
+{
+	int i = 0;
+	SignatureInstance *inst = this;
+	while (inst->prev_stack) {
+		i++;
+		inst = inst->prev_stack;
+	}
+	if (num_stacks_ret) *num_stacks_ret = inst->NumStacks(-1);
+	return i;
 }
 
 /*! Compute and return the size the pattern should take up.
@@ -2305,7 +2348,15 @@ Laxkit::Attribute *SignatureInstance::dump_out_atts(Laxkit::Attribute *att,int w
 	if      (use_creep == CREEP_None)   att->push("use_creep", "none");
 	else if (use_creep == CREEP_Saddle) att->push("use_creep", "saddle");
 	else if (use_creep == CREEP_Custom) att->push("use_creep", "custom");
-	att->push("saddle_creep", saddle_creep);
+
+	if (creep_units != UNITS_None && creep_units != UNITS_Default) {
+		UnitManager *unit_manager = GetUnitManager();
+		const char *nm = unit_manager->UnitName(creep_units, UNITS_Length);
+		att->pushStr("saddle_creep", -1, "%.10g %s", saddle_creep, nm ? nm : "");
+	} else {
+		att->push("saddle_creep", saddle_creep);
+	}
+
 	if (custom_creep.n) {
 		Attribute *att2 = att->pushSubAtt("custom_creep");
 		for (int c = 0; c < custom_creep.n; c++) {
@@ -2379,7 +2430,7 @@ void SignatureInstance::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::Dum
 			partition->dump_in_atts(att->attributes.e[c],flag,context);
 
 		} else if (!strcmp(name,"insert")) {
-			SignatureInstance *insert=new SignatureInstance;
+			SignatureInstance *insert = new SignatureInstance;
 			insert->dump_in_atts(att->attributes.e[c],flag,context);
 			AddInsert(insert);
 
@@ -2400,7 +2451,15 @@ void SignatureInstance::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::Dum
 			else if (strEquals(value, "custom", true)) use_creep = CREEP_Custom;
 			
 		} else if (!strcmp(name,"saddle_creep")) {
-			DoubleAttribute(value, &saddle_creep, nullptr);
+			UnitManager *unit_manager = GetUnitManager();
+			int unit = UNITS_None;
+			int cat = UNITS_None;
+			double dd = unit_manager->ParseWithUnit(value, &unit, &cat, nullptr, nullptr);
+			SignatureInstance *topsig = this;
+			while (topsig->prev_insert) topsig = topsig->prev_insert;
+			topsig->saddle_creep = dd;
+			if (unit != UNITS_None && unit != UNITS_Default) topsig->creep_units = unit;
+			else topsig->creep_units = UNITS_Default;
 
 		} else if (!strcmp(name,"custom_creep")) {
 			custom_creep.flush();
@@ -3460,7 +3519,8 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 
 	//Create the actual Spread...
 
-	int num_pages_with_inserts = sig->PagesPerSignature(0,1);
+	int num_pages_without_inserts = sig->PagesPerSignature(0,1);
+	int num_pages_with_inserts    = sig->PagesPerSignature(0,0);
 	Signature *signature = sig->pattern;
 	PaperStyle *paper = sig->partition->paper;
 
@@ -3551,7 +3611,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 			else
 				pageindex = ff + sigpaper;
 			// now add proper offset to pageindex to use directly with doc->pages
-			if (pageindex >= num_pages_with_inserts / 2)
+			if (pageindex >= num_pages_without_inserts / 2)
 				pageindex += opposite_offset;
 			else
 				pageindex += mainpageoffset;
@@ -3569,20 +3629,42 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 				pageoutline->origin(flatpoint(xx,yy));
 			}
 
-			if (sig->use_creep == SignatureInstance::CREEP_Saddle && fabs(sig->saddle_creep) > 1e-6) {
+			// double top_creep = sig->saddle_creep;
+			int pages_above = 0;
+			SignatureInstance *topsig = sig;
+			while (topsig->prev_insert) {
+				topsig = topsig->prev_insert;
+				if (topsig) pages_above += topsig->PagesPerSignature(0, true);
+			}
+
+			// use topsig creep value only
+			if (topsig->use_creep == SignatureInstance::CREEP_Saddle && fabs(topsig->saddle_creep) > 1e-6) {
+
+				double creep = topsig->saddle_creep;
+				if (topsig->creep_units != UNITS_None && topsig->creep_units != UNITS_Default) {
+					UnitManager *unit_manager = GetUnitManager();
+					int err = 0;
+					creep = unit_manager->Convert(creep, topsig->creep_units, UNITS_Inches, UNITS_Length, &err);
+					if (err) creep = 0;
+				}
+
 				// lock the outer page, and shift more as you approach the centerfold
 				flatvector shift_dir;
 				bool is_opposite = false;
 
-
-				int near = pageindex -= mainpageoffset;
+				int near = pageindex - mainpageoffset;
 				int near_old = near;
-				if (near >= num_pages_with_inserts/2) {
-					near = num_pages_with_inserts - 1 - near;
+				if (pages_above/2 + near >= (pages_above + num_pages_with_inserts)/2) {
+					near = pages_above + num_pages_with_inserts - 1 - (near + pages_above/2);
 					is_opposite = true;
+				} else {
+					near += pages_above / 2;
 				}
-				// cout <<"r: "<<rr<<"  c: "<<cc<<"  back: "<<(back ? "true" : "false")
-				// 	 <<"  main offset: "<<mainpageoffset<<"  num_pages_with_inserts: "<<num_pages_with_inserts<< "  near: "<<near_old<<" -> "<<near<<"  opposite: "<<(is_opposite ? "true": "false")<<endl;
+				// cout <<"r: "<<rr<<"  c: "<<cc<<"  back: "<<(back ? "true" : "false") 
+				// 	<< "  above: "<<pages_above
+				// 	<< "  num_pages_with_inserts: " <<num_pages_with_inserts
+				// 	<< "  main offset: "<<mainpageoffset
+				// 	<< "  near: "<<near_old<<" -> "<<near<<"  opposite: "<<(is_opposite ? "true": "false")<<endl;
 
 				if (signature->binding == 'l') {
 					shift_dir = (back ? -1 : 1) * (is_opposite ? -1 : 1) * pageoutline->xaxis();
@@ -3598,10 +3680,10 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 				}
 
 				double amt = 0;
-				if (num_pages_with_inserts > 4) amt = (near/2) / double(num_pages_with_inserts/4 - 1);
-				DBGM("saddle creep: " << amt);
+				if (pages_above + num_pages_with_inserts > 4) amt = (near/2) / double((pages_above + num_pages_with_inserts)/4 - 1);
+				// DBGM("saddle creep: " << amt);
 				// cout << "saddle creep: " << amt << endl;
-				pageoutline->origin(pageoutline->origin() + amt * sig->saddle_creep * shift_dir);
+				pageoutline->origin(pageoutline->origin() + amt * creep * shift_dir);
 
 			} else if (sig->use_creep == SignatureInstance::CREEP_Custom) {
 				DBGW("need to implement custom creep!!");

@@ -206,6 +206,7 @@ class SignatureInstance : public Value
 	enum CreepType { CREEP_None, CREEP_Saddle, CREEP_Custom };
 	CreepType use_creep = CREEP_None;
 	double saddle_creep = 0.; //amount of creep for this signature stack, position difference between innermost and outer page, usually num_sheets*page_thickness
+	int creep_units;
 	Laxkit::NumStack<CustomCreep> custom_creep;
 
 	SignatureInstance *next_insert,*prev_insert; //insert this into this one at middle when folded up 
@@ -233,7 +234,10 @@ class SignatureInstance : public Value
 	virtual int NumStacks();
 	virtual int NumStacks(int which);
 	virtual int NumInserts();
+	virtual int InsertIndex();
+	virtual int StackIndex(int *num_stacks_ret = nullptr);
 	virtual SignatureInstance *GetSignature(int stack,int insert);
+	virtual SignatureInstance *TopInstance();
 	virtual double PatternHeight();
 	virtual double PatternWidth();
 	virtual int UseThisSignature(Signature *sig, int link);

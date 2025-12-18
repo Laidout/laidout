@@ -32,9 +32,8 @@
 // #include <lax/displayer-cairo.h>
 
 
-#include <iostream>
+#include <lax/debug.h>
 using namespace std;
-#define DBG 
 
 
 using namespace Laxkit;
@@ -181,7 +180,7 @@ enum SignatureInterfaceActions {
 	SIGM_Tile_FoldThenInsert,
 	SIGM_Tile_FoldThenAdjacent,
 	SIGM_Tile_Custom,
-	SIGM_Tile_LRTB,
+	SIGM_Tile_LRTB, // these should be same order as LAX_LRTB...
 	SIGM_Tile_LRBT,
 	SIGM_Tile_RLTB,
 	SIGM_Tile_RLBT,
@@ -539,14 +538,26 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 
 		} else if (i == SIGM_No_Creep) {
 			if (!siginstance) return 0;
-			siginstance->use_creep = SignatureInstance::CREEP_None;
+			SignatureInstance *topsig = siginstance;
+			while (topsig->prev_insert) topsig = topsig->prev_insert;
+			while (topsig) {
+				topsig->use_creep = SignatureInstance::CREEP_None;
+				topsig = topsig->next_insert;
+			}
+			// siginstance->use_creep = SignatureInstance::CREEP_None;
 			remapHandles(1);
 			needtodraw = 1;
 			return 0;
 
 		} else if (i == SIGM_Saddle_Creep) {
 			if (!siginstance) return 0;
-			siginstance->use_creep = SignatureInstance::CREEP_Saddle;
+			// siginstance->use_creep = SignatureInstance::CREEP_Saddle;
+			SignatureInstance *topsig = siginstance;
+			while (topsig->prev_insert) topsig = topsig->prev_insert;
+			while (topsig) {
+				topsig->use_creep = SignatureInstance::CREEP_Saddle;
+				topsig = topsig->next_insert;
+			}
 			remapHandles(1);
 			needtodraw = 1;
 			return 0;
@@ -574,6 +585,12 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 			needtodraw = 1;
 			return 0;
 
+		} else if (i >= SIGM_Tile_LRTB && i <= SIGM_Tile_BTRL) {
+			siginstance->stacking_order = i - SIGM_Tile_LRTB + LAX_LRTB;
+			PostMessage("IMPLEMENT ME!!!!");
+			needtodraw = 1;
+			return 0;
+
 		} else if (i < 999) {
 			 //selecting new paper size
 			if (i >= 0 && i < laidout->papersizes.n) {
@@ -592,8 +609,14 @@ int SignatureInterface::Event(const Laxkit::EventData *data,const char *mes)
 
 	} else if (!strcmp(mes,"saddle_creep")) {
 		const StrEventData *s = dynamic_cast<const StrEventData *>(data);
-		double dd = strtof(s->str, nullptr);
-		siginstance->saddle_creep = dd;
+		UnitManager *unit_manager = GetUnitManager();
+		int unit = UNITS_None;
+		int cat = UNITS_None;
+		double dd = unit_manager->ParseWithUnit(s->str, &unit, &cat, nullptr, nullptr);
+		SignatureInstance *topsig = siginstance;
+		while (topsig->prev_insert) topsig = topsig->prev_insert;
+		topsig->saddle_creep = dd;
+		if (unit != UNITS_None && unit != UNITS_Default) topsig->creep_units = unit;
 		remapHandles(1);
 		needtodraw = 1;
 		return 0;
@@ -677,7 +700,7 @@ void SignatureInterface::createHandles()
 	controls.push(new ActionArea(SP_Num_Pages        , AREA_H_Slider, "Pages",       _("Wheel or drag changes number of pages"),      0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Automarks        , AREA_H_Slider, "Automarks",   _("Wheel or click to select auto printer marks"),0,1,c,0,c2));
 	controls.push(new ActionArea(SP_Creep            , AREA_H_Slider, "Creep",       _("Click to select creep type"),0,1,c,0,c2));
-	controls.push(new ActionArea(SP_Saddle_Creep     , AREA_H_Slider, "SaddleCreep", _("Click to enter new saddle creep value"),0,1,c,0,c2));
+	controls.push(new ActionArea(SP_Saddle_Creep     , AREA_H_Slider, "SaddleCreep", _("Distance innermost papers stick out past outermost papers"),0,1,c,0,c2));
 
 	c=color_inset;
 	controls.push(new ActionArea(SP_Inset_Top        , AREA_Handle, NULL, _("Inset top"),   2,1,c,0));
@@ -829,9 +852,15 @@ void SignatureInterface::remapHandles(int which)
 		area = control(SP_Saddle_Creep);
 		if (siginstance->use_creep == SignatureInstance::CREEP_Saddle) {
 			area->hidden = false;
-			char str[50];
-			sprintf(str, "%.6g", siginstance->saddle_creep);
-			makestr(area->text, str);
+			Utf8String str;
+			SignatureInstance *topsig = siginstance;
+			while (topsig->prev_insert) topsig = topsig->prev_insert;
+			if (topsig->creep_units != UNITS_Default) {
+				UnitManager *unit_manager = GetUnitManager();
+				const char *nm = unit_manager->UnitName(topsig->creep_units, UNITS_Length);
+				str.Sprintf("%.6g %s", topsig->saddle_creep, nm ? nm : "");
+			} else str.Sprintf("%.6g", topsig->saddle_creep);
+			makestr(area->text, str.c_str());
 		} else area->hidden = true;
 		double wwww2 = dp->textextent(area->text,-1, nullptr,nullptr)+hhhh;
 		area->SetRect(wwww,dp->Maxy - hhhh, wwww2,hhhh);
@@ -841,7 +870,7 @@ void SignatureInterface::remapHandles(int which)
 		area=control(SP_Current_Sheet);
 		sprintf(buffer,"Sheet %d/%d, %s",(int(currentPaperSpread/2)+1),
 										 sigimp->NumPapers()/2,
-										 (OnBack()?"Back":"Front"));
+										 (OnBack() ? "Front" : "Back"));
 		makestr(area->text,buffer);
 		//wwww=dp->textextent("Sheet 0000/0000, Front",-1,NULL,NULL);
 		wwww=dp->textextent(buffer,-1,NULL,NULL)+hhhh;
@@ -1111,14 +1140,17 @@ int SignatureInterface::Refresh()
 	double xx,yy;
 	//int xflip;
 	int yflip;
-	int i=-1;
+	int i = -1;
 	ImageData *thumb;
+	int insert_index = siginstance->InsertIndex();
 
 	//DBG dumpfoldinfo(foldinfo, signature->numhfolds, signature->numvfolds);
 
 	int rangeofpapers = 2*siginstance->sheetspersignature;
 	int npageshalf = siginstance->PagesPerSignature(0,1)/2;
 	double apparentleft = OnBack() ? siginstance->partition->insetleft : siginstance->partition->insetright; 
+
+	// cout <<endl;
 
 	x = apparentleft;
 	for (int tx=0; tx<siginstance->partition->tilex; tx++) {
@@ -1179,55 +1211,138 @@ int SignatureInterface::Refresh()
 					 //compute range of pages for this cell and print range of pages at bottom of arrow
 					if (foldlevel==0) {
 						 //all unfolded, show only page for currentPaperSpread
-						tt=foldinfo[rrr][ccc].finalindexfront;
-						ff=foldinfo[rrr][ccc].finalindexback;
-						if (ff>tt) {
-							tt*=rangeofpapers/2;
-							ff=tt + rangeofpapers - 1;
-						} else {
-							ff*=rangeofpapers/2;
-							tt=ff + rangeofpapers-1;
-						}
+						 tt = foldinfo[rrr][ccc].finalindexfront;
+						 ff = foldinfo[rrr][ccc].finalindexback;
+						 if (ff > tt) {
+							 tt *= rangeofpapers / 2;
+							 ff = tt + rangeofpapers - 1;
+						 } else {
+							 ff *= rangeofpapers / 2;
+							 tt = ff + rangeofpapers - 1;
+						 }
 
-						if (ff>tt) i=ff-sigpaper;
-						else i=ff+sigpaper;
-						if (i<npageshalf) i+=pageoffset; else i+=midpageoffset;
-						i++; //make first page 1, not 0
+						 if (ff > tt) i = ff - sigpaper;
+						 else i = ff + sigpaper;
+						 if (i < npageshalf) i += pageoffset;
+						 else i += midpageoffset;
+						 i++;  // make first page 1, not 0
 
-						if (document && i>0 && i<=document->pages.n && document->pages.e[i-1]->label)
-							sprintf(str,"%s",document->pages.e[i-1]->label);
-						else sprintf(str,"%d",i);
+						 if (document && i > 0 && i <= document->pages.n && document->pages.e[i - 1]->label)
+							 sprintf(str, "%s", document->pages.e[i - 1]->label);
+						 else
+							 sprintf(str, "%d", i);
 
 					} else {
-						 //partially folded, need to figure out which page is on top
-						tt=rangeofpapers*foldinfo[rrr][ccc].finalindexfront;
-						ff=rangeofpapers*foldinfo[rrr][ccc].finalindexback;
+						// partially folded, need to figure out which page is on top
+						tt = rangeofpapers * foldinfo[rrr][ccc].finalindexfront;
+						ff = rangeofpapers * foldinfo[rrr][ccc].finalindexback;
 
-						 //show range of pages represented at this fold stage
-						if (ff<npageshalf) { ff+=pageoffset; tt+=pageoffset; }
-						else { ff+=midpageoffset; tt+=midpageoffset; }
-						if (document && ff>=0 && ff<document->pages.n && document->pages.e[ff]->label)
-							sprintf(str,"%s",document->pages.e[ff]->label);
-						else sprintf(str,"%d",ff+1);
-						//sprintf(str,"%d-%d",ff+1,tt+1); //shows whole range of pages
+						// show range of pages represented at this fold stage
+						if (ff < npageshalf) {
+							ff += pageoffset;
+							tt += pageoffset;
+						} else {
+							ff += midpageoffset;
+							tt += midpageoffset;
+						}
+						if (document && ff >= 0 && ff < document->pages.n && document->pages.e[ff]->label)
+							sprintf(str, "%s", document->pages.e[ff]->label);
+						else
+							sprintf(str, "%d", ff + 1);
+						// sprintf(str,"%d-%d",ff+1,tt+1); //shows whole range of pages
 					}
 
 
-					 //show thumbnails
-					if (foldlevel==0) {
-						if (showthumbs && document && i-1>=0 && i-1<document->pages.n) {
+				 	// when fully unfolded...
+					if (foldlevel == 0) {
+						// set up page transform
+						Affine tr;
+						flatpoint p1;
+						if (yflip) {
+							p1 = pts[2]; tr.origin(p1); tr.xaxis(pts[3]-p1); tr.yaxis(pts[1]-p1);
+						} else {
+							p1 = pts[0]; tr.origin(p1); tr.xaxis(pts[1]-p1); tr.yaxis(pts[3]-p1);
+						}
+						double neww = tr.xaxis().norm();
+						double newh = tr.yaxis().norm();
+						tr.Normalize();
+
+						// determine any creep tweak before rendering page thumb
+						flatpoint creep_shift;
+						double creep_rotation = 0;						
+						
+						bool back = OnBack();
+						int pageindex = i-1;
+						int num_pages_with_inserts = siginstance->PagesPerSignature(0,0);
+						int pages_above = 0;
+						SignatureInstance *topsig = siginstance;
+						while (topsig->prev_insert) {
+							topsig = topsig->prev_insert;
+							if (topsig) pages_above += topsig->PagesPerSignature(0, true);
+						}
+						if (topsig->use_creep == SignatureInstance::CREEP_Saddle && fabs(topsig->saddle_creep) > 1e-6) {
+
+							double creep = topsig->saddle_creep;
+							if (topsig->creep_units != UNITS_None && topsig->creep_units != UNITS_Default) {
+								UnitManager *unit_manager = GetUnitManager();
+								int err = 0;
+								creep = unit_manager->Convert(creep, topsig->creep_units, UNITS_Inches, UNITS_Length, &err);
+								if (err) creep = 0;
+							}
+
+							// lock the outer page, and shift more as you approach the centerfold
+							bool is_opposite = false;
+
+							int near = pageindex - pageoffset;
+							// int near = currentPaperSpread;
+							int near_old = near;
+							if (pages_above/2 + near >= (pages_above + num_pages_with_inserts)/2) {
+								near = pages_above + num_pages_with_inserts - 1 - (near + pages_above/2);
+								is_opposite = true;
+							} else {
+								near += pages_above / 2;
+							}
+							// cout <<"r: "<<rr<<"  c: "<<cc<<"  back: "<<(back ? "true" : "false") 
+							// 	<< "  above: "<<pages_above
+							// 	<< "  num_pages_with_inserts: " <<num_pages_with_inserts
+							// 	<< "  currentPaperSpread: "<<currentPaperSpread
+							// 	<< "  pageindex: "<<pageindex
+							// 	<< "  main offset: "<<pageoffset
+							// 	<< "  near: "<<near_old<<" -> "<<near<<"  opposite: "<<(is_opposite ? "true": "false")<<endl;
+
+							if (signature->binding == 'l') {
+								creep_shift = (back ? -1 : 1) * (is_opposite ? -1 : 1) * tr.xaxis();
+								//*** define rect here...
+
+							} else if (signature->binding == 'r') {
+								creep_shift = (back ? -1 : 1) * (is_opposite ? 1 : -1) * tr.xaxis();
+
+							} else if (signature->binding == 't') {
+								creep_shift = (back ? -1 : -1) * (is_opposite ? -1 : -1) * tr.yaxis();
+
+							} else if (signature->binding == 'b') {
+								creep_shift = (back ? -1 : -1) * (is_opposite ? -1 : -1) * tr.yaxis();
+							}
+
+							double amt = 0;
+							if (pages_above + num_pages_with_inserts > 4) amt = (near/2) / double((pages_above + num_pages_with_inserts)/4 - 1);
+							// DBGM("saddle creep: " << amt);
+							// cout << "saddle creep: " << amt << endl;
+							creep_shift *= amt;
+
+						} else if (topsig->use_creep == SignatureInstance::CREEP_Custom) {
+							DBGW("IMPLEMENT ME!!!!");
+						}
+
+						
+
+					 	// show thumbnails
+						if (showthumbs && document && i-1 >= 0 && i-1 < document->pages.n) {
 							// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh show thumbs, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 
 							 //draw page i in box defined by pts
-							thumb=document->pages.e[i-1]->Thumbnail();
+							thumb = document->pages.e[i-1]->Thumbnail();
 							if (thumb) {
-								Affine tr;
-								flatpoint p1;
-								if (yflip) { p1=pts[2]; tr.origin(p1); tr.xaxis(pts[3]-p1); tr.yaxis(pts[1]-p1); }
-								else { p1=pts[0]; tr.origin(p1); tr.xaxis(pts[1]-p1); tr.yaxis(pts[3]-p1); }
-								double neww=tr.xaxis().norm();
-								double newh=tr.yaxis().norm();
-								tr.Normalize();
 								dp->PushAndNewTransform(tr.m());
 
 								if (rescale_pages) {
@@ -1247,7 +1362,7 @@ int SignatureInterface::Refresh()
 										scaling=neww/oldw;
 										offset=flatpoint(0, (newh-scaling*oldh)/2);
 									}
-									offset+=flatpoint(0-thumb->minx*scaling, 0-thumb->miny*scaling);
+									offset += flatpoint(0-thumb->minx*scaling, 0-thumb->miny*scaling);
 									Affine newt;
 									newt.Scale(scaling);
 									newt.origin(offset);
@@ -1269,17 +1384,82 @@ int SignatureInterface::Refresh()
 							}
 							// DBG if (ddp && ddp->GetCairo()) cerr <<" Siginterf refresh show thumbs end, cairo status:  "<<cairo_status_to_string(cairo_status(ddp->GetCairo())) <<endl;
 						}
+
+						// display creep
+						if (topsig->use_creep == SignatureInstance::CREEP_Saddle && creep_shift.norm2() > 1e-6) {
+							dp->NewFG(1.0,0.,0.,.25);
+							if (creep_shift.x < 0) {
+								dp->drawrectangle(tr.origin().x + ew + creep_shift.x, tr.origin().y, -creep_shift.x, eh, 1);
+							} else if (creep_shift.x > 0) {
+								dp->drawrectangle(tr.origin().x, tr.origin().y, creep_shift.x, eh, 1);
+							} else if (creep_shift.y < 0) {
+								dp->drawrectangle(tr.origin().x, tr.origin().y + eh + creep_shift.x, ew, -creep_shift.y, 1);
+							} else if (creep_shift.y > 0) {
+								dp->drawrectangle(tr.origin().x, tr.origin().y, ew, creep_shift.y, 1);
+							}
+						}
+						
+						// display spine marks
+						if (insert_index == 0 && sigimp->spine_marks) {
+							int num_stacks = 0;
+							int stack_index = siginstance->StackIndex(&num_stacks);
+							if (num_stacks > 1) {
+								int r,c;
+								bool front_of_0;
+								double ph = eh;
+								double pw = ew;
+								signature->LocatePositionFromPage(0, c,r, front_of_0);
+								// needs to be sheet 0 of insert 0
+								if (sigpaper == 0 && rr == r && cc == c && front_of_0 != back) {
+									
+									flatpoint spine_start, spine_end;
+									if (signature->binding == 'l') {
+										spine_start = tr.origin();
+										spine_end = spine_start + ph * tr.yaxis();
+
+									} else if (signature->binding == 'r') {
+										spine_start = tr.origin() + pw * tr.xaxis();
+										spine_end = spine_start + ph * tr.yaxis();
+
+									} else if (signature->binding == 't') {
+										spine_start = tr.origin() + ph * tr.yaxis();;
+										spine_end = spine_start + pw * tr.xaxis();
+
+									} else if (signature->binding == 'b') {
+										spine_start = tr.origin();
+										spine_end = spine_start + pw * tr.xaxis();
+									}
+
+									flatpoint vv = spine_end - spine_start;
+									double div_dist = vv.norm() / (2*num_stacks);
+									vv.normalize();
+									// if (div_dist > .5) div_dist = .5;
+
+									if (sigimp->spine_mark_style) {
+										dp->NewFG(sigimp->spine_mark_style->color);
+									} else {
+										dp->NewFG(0,0,0);
+									}
+									dp->LineWidthScreen(3*ScreenLine());
+									dp->moveto(spine_start +  stack_index    * div_dist * vv);
+									dp->lineto(spine_start + (stack_index+1) * div_dist * vv);
+									dp->stroke(0);
+								}
+							}
+						}
 					}
 
 					dp->LineAttributes(-1,LineSolid, CapButt, JoinMiter);
 					dp->LineWidthScreen(1);
+					if (hasface) dp->NewFG(1.,1.,1.);
+					else dp->NewFG(.75,.75,.75);
 
-					pts[0]=flatpoint(x+(ucc+.5)*ew,y+(urr+.25+.5*(yflip?1:0))*eh);
-					pts[1]=flatpoint(0,yflip?-1:1)*eh/4; //a vector, not a point
+					pts[0] = flatpoint(x+(ucc+.5)*ew,y+(urr+.25+.5*(yflip?1:0))*eh);
+					pts[1] = flatpoint(0,yflip?-1:1)*eh/4; //a vector, not a point
 					dp->drawarrow(pts[0],pts[1], 0,eh/2,1);
-					fp=pts[0]-pts[1]/2;
+					fp = pts[0]-pts[1]/2;
 
-					fp=dp->realtoscreen(fp);
+					fp = dp->realtoscreen(fp);
 					dp->DrawScreen();
 					dp->textout(fp.x,fp.y, str,-1, LAX_CENTER);
 					dp->DrawReal();
@@ -2439,7 +2619,9 @@ int SignatureInterface::LBUp(int x,int y,unsigned int state,const Laxkit::LaxMou
 		} else if (onoverlay == curhandle && onoverlay == SP_Saddle_Creep) {
 			// double d = siginstance->saddle_creep;
 			ActionArea *area = control(SP_Saddle_Creep);
-			NewLengthInputWindow(_("Saddle creep"), area, "saddle_creep", siginstance->saddle_creep);
+			SignatureInstance *topsig = siginstance;
+			while (topsig->prev_insert) topsig = topsig->prev_insert;
+			NewLengthInputWindow(_("Saddle creep"), area, "saddle_creep", topsig->saddle_creep);
 			return 0;
 
 		} else if (onoverlay>=SP_FOLDS) {
