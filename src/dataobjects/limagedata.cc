@@ -66,10 +66,6 @@ void LImageData::dump_out(FILE *f,int indent,int what,Laxkit::DumpContext *conte
 	Laxkit::Attribute att;
 	dump_out_atts(&att, what, context);
 	att.dump_out(f, indent);
-	// char spc[indent+1]; memset(spc,' ',indent); spc[indent]='\0';
-	// DrawableObject::dump_out(f,indent,what,context);
-	// fprintf(f,"%sconfig\n",spc);
-	// ImageData::dump_out(f,indent+2,what,context);
 }
 
 Laxkit::Attribute *LImageData::dump_out_atts(Laxkit::Attribute *att,int what,Laxkit::DumpContext *context)

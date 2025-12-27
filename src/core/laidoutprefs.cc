@@ -845,14 +845,14 @@ ExternalTool *LaidoutPreferences::GetDefaultTool(int category)
  * You should delete the returned list with deletestrs(strs, 0).
  * file should be full path for file.
  */
-char **LaidoutPreferences::DefaultPreviewLocations(const char *file, const char *doc_path)
+char **LaidoutPreferences::DefaultPreviewLocations(const char *file, const char *doc_path, int index)
 {
 	char **bases = new char*[preview_file_bases.n + 1];
 	bases[preview_file_bases.n] = nullptr;
 
 	int i = 0;
 	for (int c = 0; c < preview_file_bases.n; c++) {
-		bases[i] = PreviewFileName(file, preview_file_bases.e[c], doc_path);
+		bases[i] = PreviewFileName(file, preview_file_bases.e[c], doc_path, index);
 		if (bases[i] != nullptr) i++;
 	}
 	for ( ; i < preview_file_bases.n; i++)

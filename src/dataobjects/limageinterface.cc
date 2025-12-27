@@ -63,7 +63,7 @@ LImageDialog::~LImageDialog()
 // {
 // 	if (isblank(imageinfo->filename)) return nullptr;
 
-// 	char **dirs = laidout->prefs.DefaultPreviewLocations(imageinfo->filename, doc_path);
+// 	char **dirs = laidout->prefs.DefaultPreviewLocations(imageinfo->filename, doc_path, imageinfo->index);
 
 // 	return dirs;
 // }

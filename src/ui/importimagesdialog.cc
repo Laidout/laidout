@@ -660,7 +660,7 @@ int ImportImagesDialog::Event(const Laxkit::EventData *data,const char *mes)
 		if (doc) doc_path = lax_dirname(doc->Saveas(), true);
 
 		for (int c = 0; c < laidout->prefs.preview_file_bases.n; c++) {
-			str = PreviewFileName(full, laidout->prefs.preview_file_bases.e[c], doc_path);
+			str = PreviewFileName(full, laidout->prefs.preview_file_bases.e[c], doc_path, 0);
 			if (!str) continue;
 
 			int image_width = 0;
@@ -1081,21 +1081,23 @@ char *ImportImagesDialog::getPreviewFileName(const char *full)
 	const char *prevtext = prevbase->GetCText();
 	char *prev = nullptr;
 
+	int index = 0;
+	
 	if (!strcasecmp(prevtext,_("any"))) {
 		int c;
-		if (!laidout->prefs.preview_file_bases.n) prev = PreviewFileName(full, ".laidout-*.jpg", doc ? doc->Saveas() : nullptr);
+		if (!laidout->prefs.preview_file_bases.n) prev = PreviewFileName(full, ".laidout-*.jpg", doc ? doc->Saveas() : nullptr, index);
 		else {
 			for (c = 0; c < laidout->prefs.preview_file_bases.n; c++) {
-				prev = PreviewFileName(full, laidout->prefs.preview_file_bases.e[c], doc ? doc->Saveas() : nullptr);
+				prev = PreviewFileName(full, laidout->prefs.preview_file_bases.e[c], doc ? doc->Saveas() : nullptr, index);
 				if (file_exists(prev,1,nullptr) == S_IFREG) {
 					break;
 				}
 				delete[] prev; prev = nullptr;
 			}
 			if (c == laidout->prefs.preview_file_bases.n) 
-				prev = PreviewFileName(full, laidout->prefs.preview_file_bases.e[0], doc ? doc->Saveas() : nullptr);
+				prev = PreviewFileName(full, laidout->prefs.preview_file_bases.e[0], doc ? doc->Saveas() : nullptr, index);
 		}
-	} else prev = PreviewFileName(full, prevtext, doc ? doc->Saveas() : nullptr);
+	} else prev = PreviewFileName(full, prevtext, doc ? doc->Saveas() : nullptr, index);
 
 	return prev;
 }

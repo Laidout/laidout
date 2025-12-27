@@ -80,7 +80,7 @@ class LaidoutPreferences : public Value
 	virtual ExternalTool *FindExternalTool(const char *str);
 	virtual ExternalTool *GetDefaultTool(int category);
 
-	char **DefaultPreviewLocations(const char *file, const char *doc_path);
+	char **DefaultPreviewLocations(const char *file, const char *doc_path, int index);
 	
 	int UpdatePreference(const char *which, const char *value, const char *laidoutrc);
 	int UpdatePreference(const char *which, double value, const char *laidoutrc);
