@@ -196,15 +196,25 @@ int LaidoutOutFilter::Out(const char *filename, Laxkit::anObject *context, Error
  */
 const char *LaidoutInFilter::FileType(const char *first100bytes)
 {
-	if (!strncmp(first100bytes,"#Laidout ",9) && strstr(first100bytes,"Document"));
-	const char *version=first100bytes+9;
-	if (!strncmp(version,"0.092",5)) return "0.092";
-	if (!strncmp(version,"0.091",5)) return "0.091";
-	if (!strncmp(version,"0.07", 4)) return "0.07";
-	if (!strncmp(version,"0.08", 4)) return "0.08";
-	if (!strncmp(version,"0.09", 4)) return "0.09";
+	if (!strncmp(first100bytes,"#Laidout ",9) && strstr(first100bytes,"Document")) {
+		const char *version = first100bytes+9;
+		// fixme, this kind of sucks:
+		if (!strncmp(version,"0.098",5)) return "0.098";
+		if (!strncmp(version,"0.097",5)) return "0.097";
+		if (!strncmp(version,"0.096",5)) return "0.096";
+		if (!strncmp(version,"0.095",5)) return "0.095";
+		if (!strncmp(version,"0.094",5)) return "0.094";
+		if (!strncmp(version,"0.093",5)) return "0.093";
+		if (!strncmp(version,"0.092",5)) return "0.092";
+		if (!strncmp(version,"0.091",5)) return "0.091";
+		if (!strncmp(version,"0.07", 4)) return "0.07";
+		if (!strncmp(version,"0.08", 4)) return "0.08";
+		if (!strncmp(version,"0.09", 4)) return "0.09";
 
-	return LAIDOUT_VERSION;
+		return LAIDOUT_VERSION;
+	}
+
+	return nullptr;
 }
 
 const char *LaidoutInFilter::VersionName()
