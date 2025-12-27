@@ -25,6 +25,7 @@ namespace Laidout {
 
 enum LaidoutDataObjects {
 	LO_MYSTERYDATA = LaxInterfaces::LAX_DATA_MAX,
+	LO_PDFPAGEPROXY,
 	LO_PLAINTEXT,
 
 	LO_DATA_MAX

@@ -27,6 +27,7 @@
 #include "lroundedrectdata.h"
 #include "ltextonpath.h"
 #include "lvoronoidata.h"
+#include "pdfpageproxy.h"
 #include "../language.h"
 
 #include "../core/plaintext.h"
@@ -173,6 +174,15 @@ Laxkit::anObject *createVoronoiData(int p, Laxkit::anObject *refobj)
 }
 
 
+//---------------------------- PdfPageProxy --------------------------------
+
+//! For somedatafactory.
+Laxkit::anObject *createPdfPageProxy(int p, Laxkit::anObject *refobj)
+{
+	return new PdfPageProxy();
+}
+
+
 //---------------------------- PlainText --------------------------------
 
 //! For somedatafactory.
@@ -261,6 +271,7 @@ void InitializeDataFactory()
 	lobjectfactory->DefineNewObject(LAX_CAPTIONDATA,     "CaptionData",     createLCaptionData,     NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_TEXTONPATH,      "TextOnPath",      createLTextOnPath,      NULL, 0);
 	lobjectfactory->DefineNewObject(LAX_VORONOIDATA,     "VoronoiData",     createVoronoiData,      NULL, 0);
+	lobjectfactory->DefineNewObject(LO_PDFPAGEPROXY,     "PdfPageProxy",    createPdfPageProxy,     NULL, 0);
 
 	// other data types
 	lobjectfactory->DefineNewObject(LO_PLAINTEXT,        "PlainText",       createPlainText,        NULL, 0);
