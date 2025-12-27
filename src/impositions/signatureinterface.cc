@@ -135,6 +135,8 @@ enum SignatureInterfaceActions {
 	SIA_CenterStacks,
 	SIA_NextFold,
 	SIA_PreviousFold,
+	SIA_NextPaperSide,
+	SIA_PrevPaperSide,
 	SIA_InsetMask,
 	SIA_InsetInc,
 	SIA_InsetDec,
@@ -1254,6 +1256,8 @@ int SignatureInterface::Refresh()
 
 
 				 	// when fully unfolded...
+				 	flatpoint creep_min, creep_size;
+				 	bool creep_flip;
 					if (foldlevel == 0) {
 						// set up page transform
 						Affine tr;
@@ -1268,9 +1272,6 @@ int SignatureInterface::Refresh()
 						tr.Normalize();
 
 						// determine any creep tweak before rendering page thumb
-						flatpoint creep_shift;
-						double creep_rotation = 0;						
-						
 						bool back = OnBack();
 						int pageindex = i-1;
 						int num_pages_with_inserts = siginstance->PagesPerSignature(0,0);
@@ -1294,46 +1295,51 @@ int SignatureInterface::Refresh()
 							bool is_opposite = false;
 
 							int near = pageindex - pageoffset;
-							// int near = currentPaperSpread;
-							int near_old = near;
 							if (pages_above/2 + near >= (pages_above + num_pages_with_inserts)/2) {
 								near = pages_above + num_pages_with_inserts - 1 - (near + pages_above/2);
 								is_opposite = true;
 							} else {
 								near += pages_above / 2;
 							}
-							// cout <<"r: "<<rr<<"  c: "<<cc<<"  back: "<<(back ? "true" : "false") 
-							// 	<< "  above: "<<pages_above
-							// 	<< "  num_pages_with_inserts: " <<num_pages_with_inserts
-							// 	<< "  currentPaperSpread: "<<currentPaperSpread
-							// 	<< "  pageindex: "<<pageindex
-							// 	<< "  main offset: "<<pageoffset
-							// 	<< "  near: "<<near_old<<" -> "<<near<<"  opposite: "<<(is_opposite ? "true": "false")<<endl;
-
-							if (signature->binding == 'l') {
-								creep_shift = (back ? -1 : 1) * (is_opposite ? -1 : 1) * tr.xaxis();
-								//*** define rect here...
-
-							} else if (signature->binding == 'r') {
-								creep_shift = (back ? -1 : 1) * (is_opposite ? 1 : -1) * tr.xaxis();
-
-							} else if (signature->binding == 't') {
-								creep_shift = (back ? -1 : -1) * (is_opposite ? -1 : -1) * tr.yaxis();
-
-							} else if (signature->binding == 'b') {
-								creep_shift = (back ? -1 : -1) * (is_opposite ? -1 : -1) * tr.yaxis();
-							}
-
+							
 							double amt = 0;
 							if (pages_above + num_pages_with_inserts > 4) amt = (near/2) / double((pages_above + num_pages_with_inserts)/4 - 1);
-							// DBGM("saddle creep: " << amt);
-							// cout << "saddle creep: " << amt << endl;
-							creep_shift *= amt;
+							amt *= creep;
+							if (amt > 0) {
+								cerr <<"TEST"<<endl;
+							}
+							if (signature->binding == 'l') {
+								creep_flip = (back ? -1 : 1) * (is_opposite ? -1 : 1) < 1;
+								if (creep_flip) {
+									creep_min  = tr.origin() + (ew - amt)*tr.xaxis();
+									creep_size = amt*tr.xaxis() + eh*tr.yaxis();
+								} else {
+									creep_min  = tr.origin();
+									creep_size = amt*tr.xaxis() + eh*tr.yaxis();
+								}
+
+							} else if (signature->binding == 'r') {
+								creep_flip = (back ? -1 : 1) * (is_opposite ? 1 : -1) < 1;
+								if (creep_flip) {
+									creep_min  = tr.origin() + (ew - amt)*tr.xaxis();
+									creep_size = amt*tr.xaxis() + eh*tr.yaxis();
+								} else {
+									creep_min  = tr.origin();
+									creep_size = amt*tr.xaxis() + eh*tr.yaxis();
+								}
+							
+							} else if (signature->binding == 't') {
+								creep_min  = tr.origin();
+								creep_size = ew*tr.xaxis() + amt*tr.yaxis();
+							
+							} else if (signature->binding == 'b') {
+								creep_min  = tr.origin() + (eh - amt)*tr.yaxis();
+								creep_size = ew*tr.xaxis() + amt*tr.yaxis();
+							}
 
 						} else if (topsig->use_creep == SignatureInstance::CREEP_Custom) {
 							DBGW("IMPLEMENT ME!!!!");
 						}
-
 						
 
 					 	// show thumbnails
@@ -1386,17 +1392,9 @@ int SignatureInterface::Refresh()
 						}
 
 						// display creep
-						if (topsig->use_creep == SignatureInstance::CREEP_Saddle && creep_shift.norm2() > 1e-6) {
-							dp->NewFG(1.0,0.,0.,.25);
-							if (creep_shift.x < 0) {
-								dp->drawrectangle(tr.origin().x + ew + creep_shift.x, tr.origin().y, -creep_shift.x, eh, 1);
-							} else if (creep_shift.x > 0) {
-								dp->drawrectangle(tr.origin().x, tr.origin().y, creep_shift.x, eh, 1);
-							} else if (creep_shift.y < 0) {
-								dp->drawrectangle(tr.origin().x, tr.origin().y + eh + creep_shift.x, ew, -creep_shift.y, 1);
-							} else if (creep_shift.y > 0) {
-								dp->drawrectangle(tr.origin().x, tr.origin().y, ew, creep_shift.y, 1);
-							}
+						if (topsig->use_creep == SignatureInstance::CREEP_Saddle && fabs(creep_size.x) + fabs(creep_size.y) > 1e-6) {
+							dp->NewFG(1.0,0.,0.,.15);
+							dp->drawrectangle(creep_min.x, creep_min.y, creep_size.x, creep_size.y, 1);
 						}
 						
 						// display spine marks
@@ -2398,19 +2396,7 @@ int SignatureInterface::adjustControl(int handle, int dir)
 		return 0;
 
 	} else if (handle==SP_Current_Sheet) {
-        currentPaperSpread+=(dir>0?1:-1);
-        if (currentPaperSpread>=sigimp->NumPapers()) currentPaperSpread=0;
-        else if (currentPaperSpread<0) currentPaperSpread=sigimp->NumPapers()-1;
-
-        if (foldlevel!=0) {
-            signature->resetFoldinfo(NULL);
-            foldlevel=0;
-        }
-
-		 //locate corresponding paper, update siginstance,
-		ShowThisPaperSpread(currentPaperSpread);
-
-        needtodraw=1;
+		PerformAction(dir > 0 ? SIA_NextPaperSide : SIA_PrevPaperSide);
         return 0;
 
    } else if (handle==SP_Paper_Name) {
@@ -3466,6 +3452,8 @@ Laxkit::ShortcutHandler *SignatureInterface::GetShortcuts()
 	sc->Add(SIA_CenterStacks,    LAX_Down,0,0,     "CenterStacks",   _("Center on stack arrangement area"),NULL,0);
 	sc->Add(SIA_NextFold,        LAX_Left,0,0,     "NextFold",       _("Select next fold"),NULL,0);
 	sc->Add(SIA_PreviousFold,    LAX_Right,0,0,    "PreviousFold",   _("Select previous fold"),NULL,0);
+	sc->Add(SIA_NextPaperSide,   LAX_Pgdown,0,0,   "NextPaperSide",  _("Select next paper side"),NULL,0);
+	sc->Add(SIA_PrevPaperSide,   LAX_Pgup,0,0,     "PrevPaperSide",  _("Select previous paper side"),NULL,0);
 	sc->Add(SIA_InsetMask,       'i',ControlMask,0,"InsetMask",      _("Toggle which inset to change"),NULL,0);
 	sc->Add(SIA_InsetInc,        'i',0,0,          "InsetInc",       _("Increment inset"),NULL,0);
 	sc->Add(SIA_InsetDec,        'I',ShiftMask,0,  "InsetDec",       _("Decrement inset"),NULL,0);
@@ -3570,6 +3558,38 @@ int SignatureInterface::PerformAction(int action)
 		char str[100];
 		sprintf(str,_("Sets %s inset"),masktostr(insetmask));
 		PostMessage(str);
+		return 0;
+
+	} else if (action == SIA_NextPaperSide) {
+		currentPaperSpread += 1;
+        if (currentPaperSpread >= sigimp->NumPapers()) currentPaperSpread = 0;
+        else if (currentPaperSpread < 0) currentPaperSpread = sigimp->NumPapers()-1;
+
+        if (foldlevel != 0) {
+            signature->resetFoldinfo(nullptr);
+            foldlevel = 0;
+        }
+
+		// locate corresponding paper, update siginstance,
+		ShowThisPaperSpread(currentPaperSpread);
+
+        needtodraw = 1;
+		return 0;
+
+	} else if (action == SIA_PrevPaperSide) {
+		currentPaperSpread -= 1;
+        if (currentPaperSpread >= sigimp->NumPapers()) currentPaperSpread = 0;
+        else if (currentPaperSpread < 0) currentPaperSpread = sigimp->NumPapers()-1;
+
+        if (foldlevel != 0) {
+            signature->resetFoldinfo(nullptr);
+            foldlevel = 0;
+        }
+
+		// locate corresponding paper, update siginstance,
+		ShowThisPaperSpread(currentPaperSpread);
+
+        needtodraw = 1;
 		return 0;
 
 	} else if (action==SIA_InsetInc) {

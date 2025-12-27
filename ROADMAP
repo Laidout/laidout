@@ -12,10 +12,9 @@ VERSION 0.098
 (done) Fix Singles double sided
        Fix NetImposition double sided
        Make a 2d version of the 3d Net unwrapper
-       PDF podofo in, at least as 1 image per page as a proxy for purposes of imposition
-       PDF podofo out, remapping page proxies
-       Saddle stitch creep controls
-       Custom rotation and shift creep controls
+(done) PDF podofo in, as 1 image per page as proxy for pdf podofo out after imposition
+       PDF podofo out, remapping page proxies, possibly from different source files
+(done) Saddle stitch creep controls
 (done) Update svg in/out to use Inkscape's new view based multipage
 (done) Convert website to use hugo, make some new tutorials for really out of date ones
 (done) Import/export new Inkscape multipage art boards via expanded Singles imposition type
@@ -80,6 +79,7 @@ VERSION 0.099
        debug previous version a bit
 
        Adapt stack section of SignatureEditor/PaperPartition to be broader Book Assembly Editor
+       Custom rotation and shift creep controls
        Work and turn/work and tumble
        allow inserting net impositions as foldouts in regular Signature Imposition stacks
        debug Net imposition interactive unwrapper, via optional opengl Polyptych

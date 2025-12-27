@@ -3653,7 +3653,7 @@ Spread *SignatureImposition::PaperLayout(int whichpaper)
 				bool is_opposite = false;
 
 				int near = pageindex - mainpageoffset;
-				int near_old = near;
+				// int near_old = near;
 				if (pages_above/2 + near >= (pages_above + num_pages_with_inserts)/2) {
 					near = pages_above + num_pages_with_inserts - 1 - (near + pages_above/2);
 					is_opposite = true;

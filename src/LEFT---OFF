@@ -13,6 +13,8 @@ down to major items in ../features.md.
 
 ------------ serious release blocking bugs to fix right now:
 
+crash: text tool, click to start new one, but don't add anything. quit. crash on exit!
+
 bug: missing caret in node input boxes
 
 ux: right clicking on viewport buttons screws hover and passes event to split window
@@ -2394,10 +2396,10 @@ signature editor:  Signature editor Signature Editor signatureeditor: signatures
   test impose-only for all imposition types
   be able to specify single sided.. allows bound accordion foldings?
   implement auto saddle creep:
-    indicate shift in interface
-    trim affected areas from actual page spreads
+    trim affected areas from actual page spreads. currently centerfolds fail a bit
   	have more helpers for creating creep value, like hint to make a mockup, or compute with common rule of thumb: (numpages-1)/4 * paper_thickness
   	replace the whole creep_units thing with LengthValue when it's ready
+    DONE indicate shift in interface
   	DONE implement creep_units
     DONE fix with inserts.. only top most siginstance should have the creep?
   implement manual creep transforms: rotate around page center, and translate
