@@ -35,6 +35,7 @@
 #include <lax/freedesktop.h>
 #include <lax/interfaces/interfacemanager.h>
 #include <lax/utf8string.h>
+#include <lax/laximages.h>
 #include <sys/file.h>
 
 #define LAIDOUT_CC
@@ -111,14 +112,14 @@ const char *LaidoutVersion()
  * is perhaps a little more meaningful or something...
  */
 
-char **GetDefaultPreviewLocations(const char *file, const char *doc_path)
+char **GetDefaultPreviewLocations(const char *file, const char *doc_path, int index)
 {
 	char **bases = new char*[laidout->prefs.preview_file_bases.n + 1];
 	bases[laidout->prefs.preview_file_bases.n] = nullptr;
 
 	int i = 0;
 	for (int c = 0; c < laidout->prefs.preview_file_bases.n; c++) {
-		bases[i] = PreviewFileName(file, laidout->prefs.preview_file_bases.e[c], doc_path);
+		bases[i] = PreviewFileName(file, laidout->prefs.preview_file_bases.e[c], doc_path, index);
 		if (bases[i] != nullptr) i++;
 	}
 	for ( ; i < laidout->prefs.preview_file_bases.n; i++)
