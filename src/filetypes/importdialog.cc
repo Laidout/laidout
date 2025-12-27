@@ -271,18 +271,20 @@ int ImportFileDialog::Event(const EventData *e,const char *mes)
 		c=fread(first100,1,200,f);
 		fclose(f);
 
-		const char *filtertype=NULL;
-		ImportFilter *filter=NULL;
-		for (c=0; c<laidout->importfilters.n; c++) {
-			filtertype=laidout->importfilters.e[c]->FileType(first100);
+		const char *filtertype = nullptr;
+		ImportFilter *filter = nullptr;
+		for (c = 0; c < laidout->importfilters.n; c++) {
+			filtertype = laidout->importfilters.e[c]->FileType(first100);
 			if (filtertype) {
-				filter=laidout->importfilters.e[c];
+				filter = laidout->importfilters.e[c];
 				break;
 			}
 		}
 		if (filtertype) {
 			file->GetLineEdit()->Valid(1);
-			fileinfo->SetText(filename);
+			Utf8String str;
+			str.Sprintf("%s -> %s", lax_basename(filename), filter->VersionName());
+			fileinfo->SetText(str.c_str());
 			makestr(config->filename,filename);
 			//if (config->filter) config->filter->dec_count();
 			config->filter=filter;
