@@ -1,9 +1,14 @@
-This directory contains a port of the folder of Laidout
+Folding demo using Processing
+-----------------------------
+
+This directory contains an old port of the folder of Laidout
 to run in Processing (tested in version 2.0b7), and also
 a version in a single web page, running Processing.js.
 
 You should be able to run the html version in any 
-browser that can handle HTML5's canvas.
+browser that can handle HTML5's canvas. If you get
+"cross origin" errors, then you probably have to run
+the pages through a local web server.
 
 Please send feedback, good or bad, to tom@tomlechner.com.
 Porting always introduces unforseen cantankerous bugs, so
