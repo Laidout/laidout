@@ -29,6 +29,7 @@
 #include "../core/stylemanager.h"
 #include "../core/utils.h"
 #include "../dataobjects/limagedata.h"
+#include "../dataobjects/pdfpageproxy.h"
 #include "../impositions/singles.h"
 #include "../ui/headwindow.h"
 
@@ -44,8 +45,10 @@
 
 #include <lax/debug.h>
 
+
 using namespace Laxkit;
 using namespace LaxInterfaces;
+using namespace PoDoFo;
 
 
 namespace Laidout {
@@ -66,7 +69,7 @@ namespace Laidout {
 //--------------------------------- install PDF filter
 
 //! Tells the Laidout application that there's a new filter in town.
-void installPodofoFilter()
+void installPodofoFilters()
 {
 	// PodofoExportFilter *pdfout = new PodofoExportFilter(4);
 	// pdfout->GetObjectDef();
@@ -74,50 +77,6 @@ void installPodofoFilter()
 	
 	PodofoImportFilter *pdfin = new PodofoImportFilter;
 	laidout->PushImportFilter(pdfin);
-}
-
-
-//------------------------- PdfPageProxy -----------------------------
-
-class PdfPageProxy : public LImageData
-{
-  public:
-  	Utf8String pdf_file;
-  	int index = -1;
-  	int preview_max_px = 256;
-  	PaperStyle *paperstyle = nullptr;
-
-
-  	PdfPageProxy(const char *file, int i, PaperStyle *style, int preview_size);
-  	virtual ~PdfPageProxy();
-  	virtual const char *whattype() { return "PdfPageProxy"; }
-};
-
-PdfPageProxy::PdfPageProxy(const char *file, int i, PaperStyle *style, int preview_size)
-{
-	index = i;
-	paperstyle = style;
-	if (paperstyle) paperstyle->inc_count();
-	if (preview_size > 0) preview_max_px = preview_size;
-
-	if (filename) {
-		pdf_file = filename;
-		LoadPreviewed(filename, i, preview_max_px, false, nullptr);
-		// BuildPreview(preview_max_px);
-	}
-
-	double w = paperstyle->w();
-	double h = paperstyle->h();
-	double scale  = w/maxx;
-	double scaley = h/maxy;
-	if (scaley < scale) scale = scaley;
-	xaxis(scale*xaxis());
-	yaxis(scale*yaxis());
-}
-
-PdfPageProxy::~PdfPageProxy()
-{
-	if (paperstyle) paperstyle->dec_count();
 }
 
 
@@ -167,22 +126,8 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
     double page_dpi = config->dpi;
     if (page_dpi <= 0) page_dpi = 300;
     // double preview_dpi = 72;
-    int docpagenum = 0;
-
-	if (!group && doc) {
-		 //document page to start dumping onto
-		docpagenum = config->topage; //the page in laidout doc to start dumping into
-		int curdocpage; //the current page in the laidout document, used in loop below
-		if (docpagenum < 0) docpagenum = 0;
-
-		 //update group to point to the document page's group
-		curdocpage = docpagenum;
-		if (curdocpage >= doc->pages.n) {
-			doc->NewPages(-1, (curdocpage+1)-doc->pages.n);
-		}
-		group = dynamic_cast<Group *>(doc->pages.e[curdocpage]->layers.e(0));  // pick layer 0 of the page
-	}
-
+    int docpagenum = config->topage;
+    if (docpagenum < 0) docpagenum = 0;
 
 	PoDoFo::PdfMemDocument pdf_doc;
     pdf_doc.Load(file);
@@ -193,7 +138,14 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 
     DBGL("num pages: "<< num_pages);
 
+    if (num_pages == 0) {
+    	log.AddError(_("No pages in file!"));
+    	return 1;
+    }
+
+    const char *fname = lax_basename(file);
     RefPtrStack<PdfPageProxy> pages;
+    Utf8String scratch;
 
     // process pages
     for (int c = 0; c < num_pages; c++) {
@@ -202,22 +154,25 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
         unsigned page_num = page.GetPageNumber();
         double page_width = rect.GetRight() - rect.GetLeft(); // these are points, 72 pts == 1 inch
         double page_height = rect.GetTop() - rect.GetBottom();
+        page_width  /= 72;
+        page_height /= 72;
 
         DBGL("("<<page_num<<") xywh: "<< rect.GetLeft()<<","<<rect.GetBottom()<<','<<rect.GetRight()<<','<<rect.GetTop());
 
-        const PoDoFo::PdfContents *contents = page.GetContents();
-        PoDoFo::charbuff buff;
-        contents->CopyTo(buff);
-        DBGL(buff);
+        // const PoDoFo::PdfContents *contents = page.GetContents();
+        // PoDoFo::charbuff buff;
+        // contents->CopyTo(buff);
+        // DBGL(buff);
 
         int landscape = 0;
         PaperStyle *paperstyle = GetNamedPaper(page_width, page_height, &landscape, 0, nullptr, 1e-3);
         if (paperstyle) paperstyle = dynamic_cast<PaperStyle*>(paperstyle->duplicate());
-        else paperstyle = new PaperStyle(_("Custom"), page_width/72, page_height/72, landscape, page_dpi, "cm");
+        else paperstyle = new PaperStyle(_("Custom"), page_width, page_height, landscape, page_dpi, "in");
 
 		// generate previews for pages via gm
         PdfPageProxy *page_image = new PdfPageProxy(file, c, paperstyle, preview_size);
-        // page_image->LoadImage(file, nullptr, preview_size,preview_size, 0,1, c);
+        scratch.Sprintf("%s page %d", fname, c+1);
+        page_image->Id(scratch.c_str());
         pages.push(page_image);
     }
 
@@ -230,23 +185,13 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
    		imp->dec_count();
    		doc->imposition->SetPaperSize(pages.e[0]->paperstyle);
 
-   		int num_pages_needed = pages.n;
-		if (docpagenum + num_pages_needed >= doc->pages.n) {
-			doc->NewPages(-1, (docpagenum + num_pages_needed) - doc->pages.n);
-		}
 	}
 
 
 	if (!group && doc) {
-		// document page to start dumping onto
-		int docpagenum = config->topage; //the page in laidout doc to start dumping into
-		int curdocpage;
-		if (docpagenum < 0) docpagenum = 0;
-
-		// update group to point to the document page's group
-		curdocpage = docpagenum;
-		if (curdocpage >= doc->pages.n) {
-			doc->NewPages(-1, (curdocpage+1)-doc->pages.n);
+   		int num_pages_needed = pages.n;
+		if (docpagenum + num_pages_needed >= doc->pages.n) {
+			doc->NewPages(-1, (docpagenum + num_pages_needed) - doc->pages.n);
 		}
 	}
 
@@ -260,7 +205,7 @@ int PodofoImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog
 		if (!config->no_new_windows) laidout->app->addwindow(newHeadWindow(doc));
 	}
 	
-	return 1;
+	return 0;
 }
 
 
@@ -330,6 +275,30 @@ ObjectDef *PodofoExportFilter::GetObjectDef()
 }
 
 
+//--------------------------------------- PDF Out helpers ------------------------------------
+
+void ScanForPdfFiles(NumStack<Utf8String> &pdf_files, DrawableObject *obj)
+{
+	if (!obj) return;
+	PdfPageProxy *proxy = dynamic_cast<PdfPageProxy*>(obj);
+	if (proxy) pdf_files.pushnodup(proxy->pdf_file);
+	
+	for (int c = 0; c < obj->n(); c++) {
+		proxy = dynamic_cast<PdfPageProxy*>(obj->e(c));
+		if (proxy) pdf_files.pushnodup(proxy->pdf_file);
+
+		SomeDataRef *ref = dynamic_cast<SomeDataRef*>(obj->e(c));
+		if (ref) {
+			proxy = dynamic_cast<PdfPageProxy*>(ref->GetFinalObject());
+			if (proxy) pdf_files.pushnodup(proxy->pdf_file);
+		}
+
+		DrawableObject *dobj = dynamic_cast<DrawableObject*>(obj->e(c));
+		if (dobj) ScanForPdfFiles(pdf_files, dobj);
+	}
+}
+
+
 //--------------------------------------- PDF Out main ------------------------------------
 
 /*! Save the document as PDF.
@@ -357,17 +326,20 @@ int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, Err
 		return 1;
 	}
 	
-	Utf8String file = nullptr;
-	if (!filename) {
-		if (!doc || isblank(doc->saveas)) {
-			DBGW(" cannot save, null filename, doc->saveas is null.");
+	// Utf8String file;
+	// if (!filename) {
+	// 	if (!doc || isblank(doc->saveas)) {
+	// 		DBGW(" cannot save, null filename, doc->saveas is null.");
 			
-			log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
-			return 2;
-		}
-		file = doc->saveas;
-		file.Append(".pdf");
-	} else file = filename;
+	// 		log.AddMessage(_("Cannot save without a filename."),ERROR_Fail);
+	// 		return 2;
+	// 	}
+	// 	file = doc->saveas;
+	// 	file.Append(".pdf");
+	// } else file = filename;
+
+
+	DBGL("--------Pdf Podofo Out() Start---------");
 
 	//
 	// We need to scan for all PdfPageProxy. We may need to merge pdfs first.
@@ -377,13 +349,85 @@ int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, Err
 	// don't have to do anything special to preserve resource links.
 	// 
 
+	NumStack<Utf8String> pdf_files;
 
-// 	f=open_file_for_writing(file,0,&log);
-// 	if (!f) {
-// 		DBG cerr <<" cannot save, "<<file<<" cannot be opened for writing."<<endl;
-// 		delete[] file;
-// 		return 3;
-// 	}
+	Spread *spread = nullptr;
+	for (int c = (config->reverse_order ? config->range.End() : config->range.Start());
+		 c >= 0;
+		 c = (config->reverse_order ? config->range.Previous() : config->range.Next())) 
+	{
+		if (config->evenodd == DocumentExportConfig::Even && c%2==0) continue;
+		if (config->evenodd == DocumentExportConfig::Odd  && c%2==1) continue;
+			
+		if (spread) { delete spread; spread = nullptr; }
+		if (doc) spread = doc->imposition->Layout(layout,c);
+		// if (spread) desc = spread->pagesFromSpreadDesc(doc);
+		// else desc = limbo->Id() ? newstr(limbo->Id()) : nullptr;
+
+		papergroup = config->papergroup;
+		if (!papergroup && spread) papergroup = spread->papergroup;
+
+		for (int p = 0; p < (papergroup ? papergroup->papers.n : 1); p++) {
+			if (limbo && limbo->n()) {
+				ScanForPdfFiles(pdf_files, limbo);
+			}
+
+			if (papergroup && papergroup->objs.n()) {
+				ScanForPdfFiles(pdf_files, &papergroup->objs);
+			}
+
+			if (spread) {
+				if ((spread->mask & SPREAD_PRINTERMARKS) && spread->marks) {
+					ScanForPdfFiles(pdf_files, dynamic_cast<DrawableObject*>(spread->marks));
+				}
+				
+				// for each paper in paper layout..
+				for (int c2 = 0; c2 < spread->pagestack.n(); c2++) {
+					int pgindex = spread->pagestack.e[c2]->index;
+					if (pgindex < 0 || pgindex >= doc->pages.n) continue;
+					
+					Page *page = doc->pages.e[pgindex];
+					
+					// handle object bleeds from other pages
+					if (page->pagebleeds.n && (config->layout == PAPERLAYOUT || config->layout == SINGLELAYOUT)) {
+						 //assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
+
+						for (int pb = 0; pb < page->pagebleeds.n; pb++) {
+							PageBleed *bleed = page->pagebleeds[pb];
+							if (bleed->index < 0 || bleed->index >= doc->pages.n) continue;
+							Page *otherpage = doc->pages[bleed->index];
+							if (!otherpage || !otherpage->HasObjects()) continue;
+
+							for (int l = 0; l < otherpage->layers.n(); l++) {
+								ScanForPdfFiles(pdf_files, dynamic_cast<DrawableObject*>(otherpage->layers.e(l)));
+							}
+						}
+		            }
+
+					// for each layer on the page..
+					for (int l = 0; l < page->layers.n(); l++) {
+						ScanForPdfFiles(pdf_files, dynamic_cast<DrawableObject*>(page->layers.e(l)));
+					}
+				}
+			}
+		}
+
+		if (spread) { delete spread; spread = nullptr; }
+		// if (desc) delete[] desc;
+	}
+
+	DBG DBGL("Pdf files found: ");
+	DBG for (int c = 0; c < pdf_files.n; c++) {
+	DBG 	DBGL("  "<<pdf_files.e[c].c_str());
+	DBG }
+
+	//----------------------
+
+	PdfMemDocument podofodoc;
+	PdfPainter painter;
+
+	try {
+
 
 
 // 	setlocale(LC_ALL,"C");
@@ -837,7 +881,6 @@ int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, Err
 // 	fclose(f);
 // 	setlocale(LC_ALL,"");
 
-
 // 	 //clean up
 // 	DBG cerr <<"done writing pdf, cleaning up.."<<endl;
 // 	obj=objs;
@@ -848,8 +891,34 @@ int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, Err
 // 	 //*** double check that this is all that needs cleanup:
 // 	if (objs) delete objs;
 
-	DBGL("=================== end pdf out ========================");
 
+		// Additional meta
+	    podofodoc.GetMetadata().SetCreator(PdfString("Laidout"));
+	    // document.GetMetadata().SetAuthor(PdfString("Some One"));
+	    // document.GetMetadata().SetTitle(PdfString("Something"));
+
+	    podofodoc.Save(filename);
+
+	} catch (PdfError&) {
+        // All PoDoFo methods may throw exceptions
+        // make sure that painter.FinishPage() is called
+        // or who will get an assert in its destructor
+        try
+        {
+            painter.FinishDrawing();
+        }
+        catch (...)
+        {
+            // Ignore errors this time
+        }
+
+        log.AddError(_("Error creating pdf file!"));
+    }
+
+
+	DBGL("=================== end pdf podofo out ========================");
+
+	if (log.Errors() > 0) return 1;
 	return 0;
 }
 

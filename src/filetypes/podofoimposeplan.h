@@ -24,14 +24,14 @@
 namespace Laidout {
 
 
-void installPodofoFilter();
+void installPodofoPlanFilter();
 
 //------------------------------------- PodofooutFilter -----------------------------------
-class PodofooutFilter : public ExportFilter
+class PodofoPlanOutFilter : public ExportFilter
 {
  protected:
  public:
-	PodofooutFilter();
+	PodofoPlanOutFilter();
 	virtual const char *Author() { return "Laidout"; }
 	virtual const char *FilterVersion() { return LAIDOUT_VERSION; }
 	

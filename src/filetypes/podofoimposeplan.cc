@@ -38,9 +38,9 @@ namespace Laidout {
 //--------------------------------- install Podofoimpose filter
 
 //! Tells the Laidout application that there's a new filter in town.
-void installPodofoFilter()
+void installPodofoPlanFilter()
 {
-	PodofooutFilter *podofoout=new PodofooutFilter;
+	PodofoPlanOutFilter *podofoout = new PodofoPlanOutFilter;
 	podofoout->GetObjectDef();
 	laidout->PushExportFilter(podofoout);
 }
@@ -49,7 +49,7 @@ void installPodofoFilter()
 //------------------------------------ PodofoExportConfig ----------------------------------
 
 //! For now, just returns a new DocumentExportConfig.
-Value *newPodofoExportConfig()
+Value *newPodofoPlanExportConfig()
 {
 	DocumentExportConfig *d=new DocumentExportConfig;
 	for (int c=0; c<laidout->exportfilters.n; c++) {
@@ -62,17 +62,17 @@ Value *newPodofoExportConfig()
 }
 
 
-//------------------------------- PodofooutFilter --------------------------------------
-/*! \class PodofooutFilter
+//------------------------------- PodofoPlanOutFilter --------------------------------------
+/*! \class PodofoPlanOutFilter
  * \brief Output filter for Podofo files.
  */
 
-PodofooutFilter::PodofooutFilter()
+PodofoPlanOutFilter::PodofoPlanOutFilter()
 {
 	flags=FILTER_MULTIPAGE;
 }
 
-const char *PodofooutFilter::VersionName()
+const char *PodofoPlanOutFilter::VersionName()
 {
 	return _("Podofoimpose PLAN");
 }
@@ -80,7 +80,7 @@ const char *PodofooutFilter::VersionName()
 //! Try to grab from stylemanager, and install a new one there if not found.
 /*! The returned def need not be dec_counted.
  */
-ObjectDef *PodofooutFilter::GetObjectDef()
+ObjectDef *PodofoPlanOutFilter::GetObjectDef()
 {
 	ObjectDef *styledef;
 	styledef=stylemanager.FindDef("PodofoExportConfig");
@@ -90,7 +90,7 @@ ObjectDef *PodofooutFilter::GetObjectDef()
 	makestr(styledef->name,"PodofoExportConfig");
 	makestr(styledef->Name,_("Podofo Export Configuration"));
 	makestr(styledef->description,_("Configuration to export a document to a Podofoimpose PLAN file for external impositioning."));
-	styledef->newfunc=newPodofoExportConfig;
+	styledef->newfunc = newPodofoPlanExportConfig;
 
 	stylemanager.AddObjectDef(styledef,0);
 	styledef->dec_count();
@@ -119,7 +119,7 @@ static void podofodumppage(FILE *f,const double *mm,int source,int target)
  *
  * \todo Need to implement something for printer marks
  */
-int PodofooutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int PodofoPlanOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;

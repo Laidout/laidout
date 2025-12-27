@@ -23,6 +23,7 @@ objs= \
 	laidoutimport.o \
 	pageatlas.o \
 	pdf.o \
+	pdfpodofo.o \
 	podofoimposeplan.o \
 	postscript.o \
 	ppt.o \

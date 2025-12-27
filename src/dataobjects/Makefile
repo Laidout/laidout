@@ -41,6 +41,7 @@ objs= \
 	ltextonpath.o \
 	lvoronoidata.o \
 	mysterydata.o \
+	pdfpageproxy.o \
 	printermarks.o 
 
 

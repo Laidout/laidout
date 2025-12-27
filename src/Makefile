@@ -117,6 +117,7 @@ otherobjs= \
 	dataobjects/objectcontainer.o \
 	dataobjects/objectfilter.o \
 	dataobjects/pointsetvalue.o \
+	dataobjects/pdfpageproxy.o \
 	dataobjects/printermarks.o \
 	filetypes/exportdialog.o \
 	filetypes/filefilters.o \
@@ -128,6 +129,7 @@ otherobjs= \
 	filetypes/laidoutimport.o \
 	filetypes/pageatlas.o \
 	filetypes/pdf.o \
+	filetypes/pdfpodofo.o \
 	filetypes/podofoimposeplan.o \
 	filetypes/postscript.o \
 	filetypes/ppt.o \

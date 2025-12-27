@@ -265,9 +265,14 @@ fi
  ##
  ## The stuff in NEED can be checked with pkg-config. Not all libraries
  ## can be checked this way! (notably cups, apparently)
-NEED="x11 xext freetype2 libssl cairo harfbuzz libpodofo $GEGLVERSION"
-NEEDGL='ftgl GraphicsMagick++'
+NEED="x11 xext GraphicsMagick++ freetype2 libssl cairo harfbuzz libpodofo $GEGLVERSION"
+NEEDGL='ftgl'
 NUM='1'
+
+if ( ! pkg-config --atleast-version=1.0.3 libpodofo ) ; then
+	echo "libpodofo must be at least 1.0.3"
+	exit 1
+fi
 
 for NAME in $NEED; do
     echo -n Checking for $NAME......;
@@ -275,7 +280,7 @@ for NAME in $NEED; do
         echo "You may need to install the development package of $NAME."; 
         NUM="";
     else 
-        echo "ok"; 
+        echo "ok: `pkg-config --modversion $NAME`"; 
     fi
 done
 #echo NUM=$NUM
@@ -287,7 +292,7 @@ if [ $USINGGL == "yes" ]; then
 			echo "You may need to install the development package of $NAME."; 
 			NUM="";
 		else 
-			echo "ok"; 
+			echo "ok: `pkg-config --modversion $NAME`"; 
 		fi
 	done
 fi
@@ -300,7 +305,7 @@ for NAME in $OPTIONAL; do
 	        echo "Didn't find optional $NAME. Install that to get access to Fontmatrix tags."; 
 		fi
     else 
-        echo "ok"; 
+        echo "ok: `pkg-config --modversion $NAME`"; 
     fi
 done
 
@@ -308,7 +313,6 @@ done
 
  ## readline doesn't seem to have a pkg-config entry, so do this hackier check
 echo -n Checking for readline......;
-#---attempt 3, check for existence of cups-config program:
 if [ ! -e /usr/local/opt/readline/include/readline/readline.h -a \
    ! -e /usr/local/include/readline/readline.h -a \
 	 ! -e /usr/include/readline/readline.h  ] ; then 

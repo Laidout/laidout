@@ -24,6 +24,7 @@
 #include "pdf.h"
 #include "htmlgallery.h"
 #include "podofoimposeplan.h"
+#include "pdfpodofo.h"
 #include "laidoutimport.h"
 #include "pageatlas.h"
 
@@ -41,7 +42,8 @@ void installFilters()
 	installImageFilter();
 	installImageGsFilter();
 	InstallHtmlFilter();
-	installPodofoFilter();
+	installPodofoPlanFilter();
+	installPodofoFilters();
 	installPptFilter();
 	installPostscriptFilters();
 	installPageAtlasFilter();

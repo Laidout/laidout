@@ -22,7 +22,7 @@
 
 namespace Laidout {
 
-void installPodofoFilter();
+void installPodofoFilters();
 
 
 //------------------------------------- PdfinFilter -----------------------------------
