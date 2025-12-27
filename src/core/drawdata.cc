@@ -187,11 +187,16 @@ void DrawDataStraight(Displayer *dp,SomeData *data,anObject *a1,anObject *a2,uns
 				}
 			
 			} else {
-				flatpoint fp;
-				fp=dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)/2));
-				dp->DrawScreen();
-				dp->textout((int)fp.x,(int)fp.y,_("unknown"),-1);
-				dp->DrawReal();
+				LaxImage *preview = data->GetPreview();
+				if (preview) {
+					dp->imageout(preview, data->minx, data->miny, data->maxx - data->minx, data->maxy - data->miny);
+				} else {
+					flatpoint fp;
+					fp = dp->realtoscreen(flatpoint((data->maxx+data->minx)/2,(data->maxy+data->miny)/2));
+					dp->DrawScreen();
+					dp->textout((int)fp.x,(int)fp.y,_("unknown"),-1);
+					dp->DrawReal();
+				}
 			}
 
 
