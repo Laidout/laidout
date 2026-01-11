@@ -2132,9 +2132,14 @@ Tools should remember their settings
      well as the running tool use settings
 
 impositioneditor:
-  implement a 2d net editor
-  3d developable surfaces? origami?
   from(done)/to files
+  implement a 2d net editor
+  3d developable surfaces?
+    flats
+    conics
+    cylinders
+    tangent strips
+  origami?
   DONE implement SinglesInterface
 
 singlesinterface:
