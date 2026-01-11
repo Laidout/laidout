@@ -52,9 +52,10 @@ class PanoramaInfo : public Laxkit::anObject
 
 //--------------------------- NetInterface -------------------------------
 
-class NetInterface : public Laxkit::anXWindow
+class NetInterface : virtual public ImpositionInterface
 {
   protected:
+  	PaperInterface *paper_interface = nullptr;
 
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
@@ -74,17 +75,18 @@ class NetInterface : public Laxkit::anXWindow
 	bool draw_overlays;
 	bool draw_papers;
 
+	Document *doc = nullptr;
 	NetImposition *original_netimp;
 	NetImposition *current_netimp;
 	AbstractNet *abstract_net;
 	Net *currentnet;
+	int current_paper_spread = -1;
 
 	Polyhedron *poly;
 
 	Laxkit::RefPtrStack<Net> nets;
 	PaperGroup *papers;
 	PaperBox *default_paper;
-	int currentpaper;
 
 	int currentpotential; //index in currentnet->faces, or -1
 	int currentface;      //index in Polyhedron of current face, or -1
@@ -111,6 +113,8 @@ class NetInterface : public Laxkit::anXWindow
 				 NetImposition *new_net);
 	virtual ~NetInterface();
 	virtual const char *whattype() { return "NetInterface"; }
+	virtual const char *IconId() { return "NetInterface"; }
+	virtual const char *Name();
 	virtual int init();
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
@@ -126,13 +130,13 @@ class NetInterface : public Laxkit::anXWindow
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	
-	// hedron gl mapping
-	virtual void installSpheremapTexture(int definetid);
-	virtual void triangulate(Laxkit::spacepoint p1 ,Laxkit::spacepoint p2 ,Laxkit::spacepoint p3,
-							 Laxkit::spacepoint p1o,Laxkit::spacepoint p2o,Laxkit::spacepoint p3o,
-							 int n);
-	virtual void mapPolyhedronTexture(Thing *thing);
-	virtual Thing *makeGLPolyhedron();
+	// // hedron gl mapping
+	// virtual void installSpheremapTexture(int definetid);
+	// virtual void triangulate(Laxkit::spacepoint p1 ,Laxkit::spacepoint p2 ,Laxkit::spacepoint p3,
+	// 						 Laxkit::spacepoint p1o,Laxkit::spacepoint p2o,Laxkit::spacepoint p3o,
+	// 						 int n);
+	// virtual void mapPolyhedronTexture(Thing *thing);
+	// virtual Thing *makeGLPolyhedron();
 
 	
 	// drawing
@@ -169,6 +173,18 @@ class NetInterface : public Laxkit::anXWindow
 	virtual int AddNet(Net *net);
 	virtual int AddPaper(PaperBound *paper);
 	virtual Polyhedron *defineCube();
+
+	// from ImpositionEditor:
+    virtual const char *ImpositionType() { return "NetImposition"; }
+    virtual Imposition *GetImposition();
+    virtual int SetTotalDimensions(double width, double height);
+    virtual int GetDimensions(double &width, double &height); //Return default paper size
+    virtual int SetPaper(PaperStyle *paper); // installs duplicate of paper
+    virtual int UseThisDocument(Document *doc);
+    virtual int UseThisImposition(Imposition *imp);
+
+    virtual int ShowThisPaperSpread(int index);
+    virtual void ShowSplash(int yes);
 };
 
 } //namespace Laidout

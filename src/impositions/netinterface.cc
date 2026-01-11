@@ -51,7 +51,7 @@ enum PaperPart {
 /*! Return 0 for success or nonzero for error.
  */
 int PanoramaInfo::SavePolyptych(const char *saveto)
-{ ***
+{
 	FILE *f = fopen(saveto,"w");
 	if (!f) {
 		DBGW("WARNING: could not open "<<saveto<<" for saving!");
@@ -91,6 +91,7 @@ int PanoramaInfo::SavePolyptych(const char *saveto)
 int PanoramaInfo::RenderPanorama(Document *doc, const Laxkit::Basis &basis_tweak)
 {
 	//*** // This should be some kind of image importer.
+	DBGE("IMPLEMENT ME!!!");
 	return -1;
 }
 
@@ -126,11 +127,11 @@ enum NetInterfaceAction {
 	NETI_DrawEdges,
 	NETI_NextFace,
 	NETI_PrevFace,
-	NETI_NextObject,
-	NETI_ScaleUp,
-	NETI_ScaleDown,
-	NETI_ResetView,
-	NETI_Stereo,
+	// NETI_NextObject,
+	// NETI_ScaleUp,
+	// NETI_ScaleDown,
+	// NETI_ResetView,
+	// NETI_Stereo,
 	NETI_MAX
 };
 
@@ -189,7 +190,6 @@ NetInterface::NetInterface(anXWindow *parnt,const char *nname,const char *ntitle
 	currentface      = -1;
 	currentpotential = -1;
 	currentnet       = nullptr;
-	currentpaper     = -1;
 
 	sc = nullptr;
 }
@@ -201,20 +201,105 @@ NetInterface::~NetInterface()
 	if (currentnet)      currentnet     ->dec_count();
 	if (poly)            poly           ->dec_count();
 	if (sc)              sc             ->dec_count();
+	if (doc)             doc            ->dec_count();
+	if (paper_interface) paper_interface->dec_count();
+}
+
+const char *NetInterface::Name()
+{
+	return _("Nets");
+}
+
+Imposition NetInterface::GetImposition()
+{
+	return current_netimp;
+}
+
+/*! Used by ImpositionEditor when imposearg specifies dimensions. */
+int NetInterface::SetTotalDimensions(double width, double height)
+{
+	PaperStyle *p = new PaperStyle("Custom",width,height,0,300,NULL);
+	SetPaper(p);
+	p->dec_count();
+	return 0;
+}
+
+/*! Return default paper size. */
+int NetInterface::GetDimensions(double &width, double &height)
+{
+	PaperStyle *paper = nullptr;
+	if (!current_netimp || !current_netimp->papergroup || !current_netimp->papergroup->papers.n)
+		paper = laidout->GetDefaultPaper();
+	else paper = papergroup->papers.e[0];
+
+	width = paper->w();
+	height = paper->h();
+
+	return 0;
+}
+
+/*! Install dup of paper. */
+int NetInterface::SetPaper(PaperStyle *paper)
+{
+	if (current_netimp) current_netimp->SetPaperSize(paper);
+	return 0;
+}
+
+int NetInterface::UseThisDocument(Document *new_doc)
+{
+	if (!new_doc) return 1;
+	if (new_doc != doc) {
+		if (doc) doc->dec_count();
+		doc = new_doc;
+		doc->inc_count();
+	}
+	return 0;
+}
+
+int NetInterface::UseThisImposition(Imposition *imp)
+{
+	if (!imp) return 1;
+
+	if (original_netimp != imp) {
+		if (original_netimp) original_netimp->dec_count();
+		original_netimp = imp;
+		if (imp) imp->inc_count();
+	}
+	if (current_netimp != original_netimp) {
+		if (current_netimp) current_netimp->dec_count();
+		current_netimp = original_netimp;
+		current_netimp->inc_count();
+	}
+
+	needtodraw = 1;
+	return 0;
+}
+
+int NetInterface::ShowThisPaperSpread(int index)
+{
+	if (index < 0 || !current_netimp || index >= current_netimp->NumSpreads(PAPERLAYOUT)) return 1;
+	current_paper_spread = index;
+	needtodraw = 1;
+	return current_paper_spread;
 }
 
 
 int NetInterface::init()
 {
-	if (!poly) {
-		poly = defineCube();
-		nets.flush();
-		if (currentnet) currentnet->dec_count();
-		currentnet = nullptr;
-		makestr(polyhedronfile, nullptr);
-		currentface = currentpotential = -1;
-		needtodraw = 1;
+	if (!paper_interface) {
+		paper_interface = new PaperInterface();
+		if (papers) paper_interface->UseThis(papers);
 	}
+
+	// if (!poly) {
+	// 	poly = defineCube();
+	// 	nets.flush();
+	// 	if (currentnet) currentnet->dec_count();
+	// 	currentnet = nullptr;
+	// 	makestr(polyhedronfile, nullptr);
+	// 	currentface = currentpotential = -1;
+	// 	needtodraw = 1;
+	// }
 
 	return 0;
 }
@@ -227,12 +312,12 @@ int NetInterface::Refresh()
 
 	int c;
 
-	//---- draw things
-	if (draw_texture) {
-		DBG cerr <<"draw texture: "<<(spheremap_data?"yes ":"no ")<<" w="<<spheremap_width<<" h="<<spheremap_height<<endl;
+	// //---- draw things
+	// if (draw_texture) {
+	// 	DBG cerr <<"draw texture: "<<(spheremap_data?"yes ":"no ")<<" w="<<spheremap_width<<" h="<<spheremap_height<<endl;
 		
-		glEnable(GL_TEXTURE_2D);
-	}
+	// 	// glEnable(GL_TEXTURE_2D);
+	// }
 
 	//------ perhaps save for future 3d?
 	// // draw frame of hedron (without nets)
@@ -330,12 +415,12 @@ int NetInterface::Refresh()
 	
 	 //---- draw dotted face outlines for each potential face of currentnet
 	if (currentnet) {
-		int face=currentnet->info; //the seed face for the net
-		Basis bas=poly->basisOfFace(face);
+		int face = currentnet->info; //the seed face for the net
+		Basis bas = poly->basisOfFace(face);
 		spacepoint p;
 		flatpoint v;
 
-		for (int c=0; c<currentnet->faces.n; c++) {
+		for (int c = 0; c < currentnet->faces.n; c++) {
 
 			if (currentnet->faces.e[c]->tag!=FACE_Potential) continue;
 			if (poly->faces.e[currentnet->faces.e[c]->original]->cache->facemode!=0) continue;
@@ -359,59 +444,25 @@ int NetInterface::Refresh()
 
 		}
 
-		if (currentpotential>=0) {
+		if (currentpotential >= 0) {
 			 //draw textured polygon if hovering over a potential in current net
 			drawPotential(currentnet,currentpotential);
 		}
 
 		if (draw_papers) {
-			double w,h;
-			double netmi[6];
-			for (int c=0; c<papers.n; c++) {
-				w=papers.e[c]->width;
-				h=papers.e[c]->height;
-
-				transform_invert(netmi,currentnet->m());
-				glPushMatrix();
-				glMultMatrixf(hedron->m);
-				setmaterial(1,1,1);
-				glBegin (GL_LINE_LOOP);
-
-				// *** really need to figure out transforms, and use gl matrices instead
-
-				v=transform_point(netmi,papers.e[c]->matrix.transformPoint(flatpoint(0,0)));
-				p=bas.p + v.x*bas.x + v.y*bas.y;
-				glVertex3f(p.x, p.y, p.z);
-
-				v=transform_point(netmi,papers.e[c]->matrix.transformPoint(flatpoint(w,0)));
-				p=bas.p + v.x*bas.x + v.y*bas.y;
-				glVertex3f(p.x, p.y, p.z);
-
-				v=transform_point(netmi,papers.e[c]->matrix.transformPoint(flatpoint(w,h)));
-				p=bas.p + v.x*bas.x + v.y*bas.y;
-				glVertex3f(p.x, p.y, p.z);
-
-				v=transform_point(netmi,papers.e[c]->matrix.transformPoint(flatpoint(0,h)));
-				p=bas.p + v.x*bas.x + v.y*bas.y;
-				glVertex3f(p.x, p.y, p.z);
-
-				glEnd(); //GL_LINE_LOOP
-				glPopMatrix();
-				glDisable(GL_LINE_STIPPLE);
-			}
+			paper_interface->Refresh();
 		}
-
-		// *** need to draw outlines of other nets that share the current net's paper
 	}
 
 
 	 //---draw current face
 	if (buttondown.isdown(0,RIGHTBUTTON)) {
-		if (rbdown>=0) transparentFace(rbdown,1,0,0,.3);
-		if (currentface>=0 && rbdown!=currentface) transparentFace(currentface,0,1,0,.3);
-	} else if (currentface>=0) {
-		if (currentfacestatus==1) transparentFace(currentface,0,1,0,.3);//over a leaf
-		else if (currentfacestatus==2) transparentFace(currentface,0,0,1,.3);
+		if (rbdown >= 0) transparentFace(rbdown,1,0,0,.3);
+		if (currentface >= 0 && rbdown!=currentface) transparentFace(currentface,0,1,0,.3);
+	
+	} else if (currentface >= 0) {
+		if (currentfacestatus == 1) transparentFace(currentface,0,1,0,.3);//over a leaf
+		else if (currentfacestatus == 2) transparentFace(currentface,0,0,1,.3);
 		else transparentFace(currentface,1,0,0,.3);
 	}
 
@@ -1790,7 +1841,7 @@ Laxkit::MenuInfo *NetInterface::ContextMenu(int x,int y,int deviceid, Laxkit::Me
 }
 
 Laxkit::ShortcutHandler *NetInterface::GetShortcuts()
-{ ***
+{
 	if (sc) return sc;
 	ShortcutManager *manager = GetDefaultShortcutManager();
 	sc = manager->NewHandler(whattype());
@@ -1816,7 +1867,7 @@ Laxkit::ShortcutHandler *NetInterface::GetShortcuts()
 	sc->Add(NETI_PrevFace,       'v',0,0,           _("PrevFace"),     _("Select previous face"),nullptr,0);
 	// sc->Add(NETI_ScaleUp,        '0',0,0,           _("ScaleUp"),      _("Scale object up"),nullptr,0);
 	// sc->Add(NETI_ScaleDown,      '9',0,0,           _("ScaleDown"),    _("Scale object down"),nullptr,0);
-	sc->Add(NETI_ResetView,      ' ',0,0,           _("ResetView"),    _("Make camera point at object from a reasonable distance"),nullptr,0);
+	// sc->Add(NETI_ResetView,      ' ',0,0,           _("ResetView"),    _("Make camera point at object from a reasonable distance"),nullptr,0);
 
 	manager->AddArea(whattype(),sc);
 	return sc;
@@ -1988,10 +2039,10 @@ int NetInterface::PerformAction(int action)
 	// 	needtodraw=1;
 	// 	return 0; 
 
-	} else if (action == NETI_ResetView) {
-		//***
-		needtodraw=1;
-		return 0;
+	// } else if (action == NETI_ResetView) {
+	// 	//***
+	// 	needtodraw=1;
+	// 	return 0;
 
 	}
 
