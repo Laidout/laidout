@@ -88,7 +88,7 @@ int CopyRecursive(const char *base_path, const char *pattern, const char *destin
 	filesystem::copy(from, to, filesystem::copy_options::overwrite_existing | filesystem::copy_options::recursive);
 }
 
-int TraverseRecursive(std::path at, std::set &visited_dirs, function per_file)
+int TraverseRecursive(std::path at, std::set &visited_dirs, function<std::path> per_file)
 {
 	***
 }
@@ -202,15 +202,68 @@ void ProjectTemplate::dump_in_atts(Laxkit::Attribute *att, int flag, Laxkit::Dum
 				meta.push(name, value);
 			}
 
-		} else if (strEquals(name, "copy")) {
-			***
+		} else if (strEquals(name, "copy")) {	  	
+
+			for (int c2 = 0; c2 < att->attributes.e[c]->attributes.n; c2++) {
+				const char *name  = att->attributes.e[c]->attributes.e[c2]->name;
+				const char *value = att->attributes.e[c]->attributes.e[c2]->value;
+
+				if (strEquals(name, "pattern")) {
+					CopyPattern pattern;
+				  	pattern.src_pattern = value;
+
+				  	// Utf8String src_pattern;
+				  	// Utf8String exclude_pattern;
+				  	// Utf8String dest_pattern;
+
+				  	for (int c3 = 0; c3 < att->attributes.e[c]->attributes.e[c2]->attributes.n; c3++) {
+						const char *name  = att->attributes.e[c]->attributes.e[c2]->attributes.e[c3]->name;
+						const char *value = att->attributes.e[c]->attributes.e[c2]->attributes.e[c3]->value;
+
+						if (strEquals(name, "exclude")) {
+				  			pattern.exclude_pattern = value;
+
+						} else if (strEquals(name, "to")) {
+							pattern.dest_pattern = value;
+						}
+					}
+
+				  	copy.push(pattern);
+				}
+			}
 
 		} else if (strEquals(name, "filter_pass")) {
-			***
+			// filter_pass "Html Gallery"
+			//     transparent  true  # filter config
+			//     tofiles "{temp}/####.html"
+			ExportFilter *filter = laidout->FindExportFilter(value);
+			
+			if (!filter) {
+				if (context->log) log->AddError(0,0,0,_("Unknown export filter: %s"), value ? value : _("null"));
+			} else {
+				DocumentExportConfig *config = filter->CreateConfig(nullptr);
+				config->filter = filter;
+				export_filters.push(config);
+				config->dec_count();
+			}
 
-		} else if (strEquals(name, "templates")) {
-			***
+		} else if (strEquals(name, "template") || strEquals(name, "template_spread")) {
+			bool for_spread = strEquals(name, "template_spread");
+			ExportTemplate *template = new ExportTemplate();
+			template->roll = for_spread ? ExportTemplate::PerSpread : ExportTemplate::OneOff;
 
+			for (int c2 = 0; c2 < att->attributes.e[c]->attributes.n; c2++) {
+				const char *name  = att->attributes.e[c]->attributes.e[c2]->name;
+				const char *value = att->attributes.e[c]->attributes.e[c2]->value;
+
+				if (strEquals(name, "pattern")) {
+				} else if (strEquals(name, "template_file")) {
+				} else if (strEquals(name, "dest_path")) {
+				}
+			}
+
+			templates.push(template);
+			template->dec_count();
 		}
 	}
 }

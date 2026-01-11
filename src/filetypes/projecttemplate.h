@@ -47,7 +47,7 @@ class TemplateVar
   	Utf8String cached_value; // result if is_compute
 };
 
-class Template
+class ExportTemplate
 {
   public:
   	DocumentExportConfig *custom_base_export = nullptr;
@@ -59,11 +59,11 @@ class Template
   	NumStack<Utf8String> vars;
   	NumStack<CopyPattern> copy;
 
-  	~Template() { if (custom_base_export) custom_base_export->dec_count(); }
+  	~ExportTemplate() { if (custom_base_export) custom_base_export->dec_count(); }
 };
 
 
-//------------------------------ ProjectTemplate -------------------------------
+//------------------------------ ProjectExportTemplate -------------------------------
 
 class ProjectTemplate : public Value
 {
@@ -75,8 +75,8 @@ class ProjectTemplate : public Value
 
   	Laxkit::Attribute meta;
   	NumStack<CopyPattern> copy;
-  	PtrStack<DocumentExportConfig> export_filters;
-  	NumStack<Template> templates;
+  	RefPtrStack<DocumentExportConfig> export_filters;
+  	RefPtrStack<ExportTemplate> templates;
 
   	ProjectTemplate(const char *config_file);
   	virtual ~ProjectTemplate();
