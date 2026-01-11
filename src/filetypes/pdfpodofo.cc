@@ -350,6 +350,7 @@ int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, Err
 	// 
 
 	NumStack<Utf8String> pdf_files;
+	NumStack<int> pdf_files_page_count;
 
 	Spread *spread = nullptr;
 	for (int c = (config->reverse_order ? config->range.End() : config->range.Start());
@@ -426,470 +427,458 @@ int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, Err
 	PdfMemDocument podofodoc;
 	PdfPainter painter;
 
+	AffineStack transforms;
+	double current_dpi = 300;
+
+
 	try {
 
+		DBGL("=================== start pdf podofo out range "<<config->range.ToString(false, false, false)<<", paper override:"
+		     <<(papergroup ? papergroup->papers.n : -1)<<" ====================");
 
+		if (pdf_files.n) {
+			// we need to possible merge existing pdf files.
+			// We will be creating new pages, and ultimately removing old pages
 
-// 	setlocale(LC_ALL,"C");
-	
-// 	DBG cerr <<"=================== start pdf out range "<<config->range.ToString(false, false, false)<<", paper override:"
-// 	DBG      <<(papergroup ? papergroup->papers.n : -1)<<" ====================\n";
+			podofodoc.Load(pdf_files.e[0].c_str());
+			pdf_files_page_count.push(podofodoc.GetPages().GetCount());
 
-// 	 // initialize outside accessible ctm
-// 	transforms.ClearAxes();
+			for (int c = 1; c < pdf_files.n; c++) {
+				PdfMemDocument other;
+				other.Load(pdf_files.e[c].c_str());
+				pdf_files_page_count.push(other.GetPages().GetCount());
+				podofodoc.GetPages().AppendDocumentPages(other);
+			}
+		}
 
-// 	 // a fresh PDF is:
-// 	 //   header: %PDF-1.4
-// 	 //   body: a list of indirect objects
-// 	 //   cross reference table
-// 	 //   trailer
-	
-	
-// 	int warning = 0;
-// 	Spread *spread = nullptr;
+		// initialize outside accessible ctm
+		transforms.ClearAxes();
 
-// 	 // Start the list of objects with the head of free objects, which
-// 	 // has generation number of 65535. Its number is the object number of
-// 	 // the next free object. Since this is a fresh pdf, there are no 
-// 	 // other free objects.
-// 	PdfObjInfo *objs= new PdfObjInfo; //head of all pdf objects
-// 	PdfObjInfo *obj = nullptr;            //temp object pointer
-// 	obj             = objs;
-// 	obj->inuse      = 'f';
-// 	obj->number     = 0;
-// 	obj->generation = 65535;
-// 	int objcount    = 1;
+		int warning = 0;
+		Spread *spread = nullptr;
+		const char *desc = nullptr;
 
-// 	// print out header
-// 	if (pdf_version == 4) fprintf (f,"%%PDF-1.4\n");
-// 	else fprintf (f,"%%PDF-1.3\n");
-// 	fprintf(f,"%%\xff\xff\xff\xff\n"); //4 byte binary file indicator
+	// 	 // Start the list of objects with the head of free objects, which
+	// 	 // has generation number of 65535. Its number is the object number of
+	// 	 // the next free object. Since this is a fresh pdf, there are no 
+	// 	 // other free objects.
+	// 	PdfObjInfo *objs= new PdfObjInfo; //head of all pdf objects
+	// 	PdfObjInfo *obj = nullptr;            //temp object pointer
+	// 	obj             = objs;
+	// 	obj->inuse      = 'f';
+	// 	obj->number     = 0;
+	// 	obj->generation = 65535;
+	// 	int objcount    = 1;
 
-// 	// object numbers of various dictionaries
-// 	int  pages      = -1;  // Pages dictionary
-// 	int  outlines   = -1;  // Outlines dictionary
-// 	int  pagelabels = -1;  // PageLabels dictionary
-// 	long doccatalog = -1;  // document's Catalog
-// 	long infodict   = -1;  // document's info dict
+	// 	// print out header
+	// 	if (pdf_version == 4) fprintf (f,"%%PDF-1.4\n");
+	// 	else fprintf (f,"%%PDF-1.3\n");
+	// 	fprintf(f,"%%\xff\xff\xff\xff\n"); //4 byte binary file indicator
 
-// 	PdfPageInfo *pageobj  = nullptr;   //temp pointer
-// 	PdfPageInfo *pageobjs = nullptr;  //points to first page dict
-// 	double m[6];
-// 	Page *page   = nullptr;  // temp pointer
-// 	char *stream = nullptr;  // page stream
-// 	char  scratch[300];   // temp buffer
-// 	int   pgindex;        // convenience variable
-// 	char *desc = nullptr;
-// 	int   paperrotate;
-// 	int   p;
+	// 	// object numbers of various dictionaries
+	// 	int  pages      = -1;  // Pages dictionary
+	// 	int  outlines   = -1;  // Outlines dictionary
+	// 	int  pagelabels = -1;  // PageLabels dictionary
+	// 	long doccatalog = -1;  // document's Catalog
+	// 	long infodict   = -1;  // document's info dict
 
-// 	// find basic pdf page info, and generate content streams.
-// 	// Actual page objects are written out after the contents of all the pages have been processed.
-// 	for (int c = (config->reverse_order ? config->range.End() : config->range.Start());
-// 		 c >= 0;
-// 		 c = (config->reverse_order ? config->range.Previous() : config->range.Next())) 
-// 	{
-// 		if (config->evenodd == DocumentExportConfig::Even && c%2==0) continue;
-// 		if (config->evenodd == DocumentExportConfig::Odd  && c%2==1) continue;
-			
-// 		if (spread) { delete spread; spread = nullptr; }
-// 		if (doc) spread = doc->imposition->Layout(layout,c);
-// 		if (spread) desc = spread->pagesFromSpreadDesc(doc);
-// 		else desc = limbo->Id() ? newstr(limbo->Id()) : nullptr;
+	// 	PdfPageInfo *pageobj  = nullptr;   //temp pointer
+	// 	PdfPageInfo *pageobjs = nullptr;  //points to first page dict
+		double m[6];
+		Page *page   = nullptr;  // temp pointer
+	// 	char *stream = nullptr;  // page stream
+	// 	char  scratch[300];   // temp buffer
+		int   pgindex;        // convenience variable
+	// 	char *desc = nullptr;
+		int   paperrotate;
+	// 	int   p;
 
-// 		papergroup = config->papergroup;
-// 		if (!papergroup && spread) papergroup = spread->papergroup;
-
-// 		for (p=0; p < (papergroup ? papergroup->papers.n : 1); p++) {
-// 			if (!pageobjs) {
-// 				pageobjs = pageobj = new PdfPageInfo;
-// 			} else {
-// 				pageobj->next = new PdfPageInfo;
-// 				pageobj = (PdfPageInfo *)pageobj->next;
-// 			}
-
-// 			paperrotate = config->paperrotation;
-// 			if (config->rotate180 && c%2==1) paperrotate += 180;
-// 			if (paperrotate >= 360) paperrotate -= 360; 
-// 			pageobj->rotation = paperrotate;
-// 			pageobj->landscape = papergroup ? papergroup->papers.e[p]->box->paperstyle->landscape() : 0;
-
-// 			pageobj->pagelabel = newstr(desc);//***should be specific to spread/paper
-// 			//not we don't need to explicitly worry about landscape: papergroup->papers.e[p]->box->paperstyle->landscape();
-// 			//since paper->w() and h() take it into account. paperrotate is something different
-// 			double spread_width = 0, spread_height = 0;
-// 			if (papergroup) {
-// 				spread_width  = papergroup->papers.e[p]->box->paperstyle->w(); //takes into account paper landscape
-// 				spread_height = papergroup->papers.e[p]->box->paperstyle->h();
-// 			} else if (spread) {
-// 				spread_width  = spread->path->boxwidth();
-// 				spread_height = spread->path->boxheight();
-// 			} else if (config->limbo) {
-// 				spread_width  = config->limbo->boxwidth();
-// 				spread_height = config->limbo->boxheight();
-// 			}
-// 			pageobj->bbox.setbounds(0, spread_width, 0, spread_height);
-
-// 			 //set initial transform: convert from inches and map to paper in papergroup
-// 			//transform_set(m,1,0,0,1,0,0);
-// 			appendstr(stream,"q\n"
-// 							 "72 0 0 72 0 0 cm\n"); // convert from inches
-// 			//transforms.Multiply(Affine(72.,0.,0.,72.,0.,0.));
-// 			transforms.PushAndNewAxes(72.,0.,0.,72.,0.,0.);
-
-
-// 			 //apply papergroup->paper transform
-// 			if (papergroup) {
-// 				transform_invert(m, papergroup->papers.e[p]->m());
-// 				sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-// 						m[0], m[1], m[2], m[3], m[4], m[5]); 
-// 				appendstr(stream,scratch);
-// 				transforms.PushAndNewAxes(m);
-// 			} else if (spread) {
-// 				//transform_invert(m, spread->path->m());
-// 				//transform_copy(m, spread->path->m());
-// 				transform_set(m, 1,0,0,1, -spread->path->minx, -spread->path->miny);
-// 				sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-// 						m[0], m[1], m[2], m[3], m[4], m[5]); 
-// 				appendstr(stream,scratch);
-// 				transforms.PushAndNewAxes(m);
-// 			}
-			
-// 			 //write out limbo object if any
-// 			if (limbo && limbo->n()) {
-// 				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,limbo,log,warning,config);
-// 			}
-
-// 			 //write out any papergroup objects
-// 			if (papergroup && papergroup->objs.n()) {
-// 				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,&papergroup->objs,log,warning,config);
-// 			}
-
-// 			if (spread) {
-// 				 // print out printer marks
-// 				 // *** later maybe this will be more like pdf printer mark annotations
-// 				if ((spread->mask & SPREAD_PRINTERMARKS) && spread->marks) {
-// 					pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,spread->marks,log,warning,config);
-// 				}
+		// find basic pdf page info, and generate content streams.
+		// Actual page objects are written out after the contents of all the pages have been processed.
+		for (int c = (config->reverse_order ? config->range.End() : config->range.Start());
+			 c >= 0;
+			 c = (config->reverse_order ? config->range.Previous() : config->range.Next())) 
+		{
+			if (config->evenodd == DocumentExportConfig::Even && c%2==0) continue;
+			if (config->evenodd == DocumentExportConfig::Odd  && c%2==1) continue;
 				
-// 				 // for each paper in paper layout..
-// 				for (int c2=0; c2<spread->pagestack.n(); c2++) {
-// 					PaperStyle *defaultpaper=doc->imposition->GetDefaultPaper();
-// 					current_dpi = defaultpaper->dpi;
+			if (spread) { delete spread; spread = nullptr; }
+			if (doc) spread = doc->imposition->Layout(layout,c);
+			if (spread) desc = spread->pagesFromSpreadDesc(doc);
+			else desc = limbo->Id() ? newstr(limbo->Id()) : nullptr;
+
+			papergroup = config->papergroup;
+			if (!papergroup && spread) papergroup = spread->papergroup;
+
+			for (int p = 0; p < (papergroup ? papergroup->papers.n : 1); p++) {
+	// 			if (!pageobjs) {
+	// 				pageobjs = pageobj = new PdfPageInfo;
+	// 			} else {
+	// 				pageobj->next = new PdfPageInfo;
+	// 				pageobj = (PdfPageInfo *)pageobj->next;
+	// 			}
+
+				paperrotate = config->paperrotation;
+				if (config->rotate180 && c%2==1) paperrotate += 180;
+				if (paperrotate >= 360) paperrotate -= 360; 
+	// 			pageobj->rotation = paperrotate;
+	// 			pageobj->landscape = papergroup ? papergroup->papers.e[p]->box->paperstyle->landscape() : 0;
+
+	// 			pageobj->pagelabel = newstr(desc);//***should be specific to spread/paper
+	// 			//not we don't need to explicitly worry about landscape: papergroup->papers.e[p]->box->paperstyle->landscape();
+	// 			//since paper->w() and h() take it into account. paperrotate is something different
+	// 			double spread_width = 0, spread_height = 0;
+	// 			if (papergroup) {
+	// 				spread_width  = papergroup->papers.e[p]->box->paperstyle->w(); //takes into account paper landscape
+	// 				spread_height = papergroup->papers.e[p]->box->paperstyle->h();
+	// 			} else if (spread) {
+	// 				spread_width  = spread->path->boxwidth();
+	// 				spread_height = spread->path->boxheight();
+	// 			} else if (config->limbo) {
+	// 				spread_width  = config->limbo->boxwidth();
+	// 				spread_height = config->limbo->boxheight();
+	// 			}
+	// 			pageobj->bbox.setbounds(0, spread_width, 0, spread_height);
+
+	// 			 //set initial transform: convert from inches and map to paper in papergroup
+	// 			//transform_set(m,1,0,0,1,0,0);
+	// 			appendstr(stream,"q\n"
+	// 							 "72 0 0 72 0 0 cm\n"); // convert from inches
+	// 			//transforms.Multiply(Affine(72.,0.,0.,72.,0.,0.));
+	// 			transforms.PushAndNewAxes(72.,0.,0.,72.,0.,0.);
+
+
+	// 			 //apply papergroup->paper transform
+	// 			if (papergroup) {
+	// 				transform_invert(m, papergroup->papers.e[p]->m());
+	// 				sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+	// 						m[0], m[1], m[2], m[3], m[4], m[5]); 
+	// 				appendstr(stream,scratch);
+	// 				transforms.PushAndNewAxes(m);
+	// 			} else if (spread) {
+	// 				//transform_invert(m, spread->path->m());
+	// 				//transform_copy(m, spread->path->m());
+	// 				transform_set(m, 1,0,0,1, -spread->path->minx, -spread->path->miny);
+	// 				sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+	// 						m[0], m[1], m[2], m[3], m[4], m[5]); 
+	// 				appendstr(stream,scratch);
+	// 				transforms.PushAndNewAxes(m);
+	// 			}
+				
+	// 			 //write out limbo object if any
+	// 			if (limbo && limbo->n()) {
+	// 				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,limbo,log,warning,config);
+	// 			}
+
+	// 			 //write out any papergroup objects
+	// 			if (papergroup && papergroup->objs.n()) {
+	// 				pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,&papergroup->objs,log,warning,config);
+	// 			}
+
+	// 			if (spread) {
+	// 				 // print out printer marks
+	// 				 // *** later maybe this will be more like pdf printer mark annotations
+	// 				if ((spread->mask & SPREAD_PRINTERMARKS) && spread->marks) {
+	// 					pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,spread->marks,log,warning,config);
+	// 				}
 					
-// 					pgindex = spread->pagestack.e[c2]->index;
-// 					if (pgindex < 0 || pgindex >= doc->pages.n) continue;
-// 					page = doc->pages.e[pgindex];
-					
-// 					 // transform to page
-// 					appendstr(stream,"q\n"); //save ctm
-// 					//transforms.PushAxes();
-// 					transforms.PushAxes();
-// 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
-// 					sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-// 							m[0], m[1], m[2], m[3], m[4], m[5]); 
-// 					appendstr(stream,scratch);
-// 					transforms.Multiply(m);
-
-// 					 // set clipping region
-// 					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
-// 					if ((page->pagestyle->flags & PAGE_CLIPS) || config->layout == PAPERLAYOUT) {
-// 						pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0, nullptr);
-// 					}
-
-
-// 					 // handle object bleeds from other pages
-// 					if (page->pagebleeds.n && (config->layout == PAPERLAYOUT || config->layout == SINGLELAYOUT)) {
-// 						 //assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
-
-// 						for (int pb = 0; pb < page->pagebleeds.n; pb++) {
-// 							PageBleed *bleed = page->pagebleeds[pb];
-// 							if (bleed->index < 0 || bleed->index >= doc->pages.n) continue;
-// 							Page *otherpage = doc->pages[bleed->index];
-// 							if (!otherpage || !otherpage->HasObjects()) continue;
-
-// 							sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
-// 									bleed->matrix[0], bleed->matrix[1], bleed->matrix[2], bleed->matrix[3], bleed->matrix[4], bleed->matrix[5]); 
-// 							appendstr(stream,"q\n"); //save ctm
-// 							appendstr(stream,scratch);
-// 							transforms.PushAndNewAxes(bleed->matrix);
-
-// 							for (int l = 0; l < otherpage->layers.n(); l++) {
-// 								pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,otherpage->layers.e(l),log,warning,config);
-// 							}
-
-// 							appendstr(stream,"Q\n"); //pop ctm, bleed transform
-// 							transforms.PopAxes();
-// 						}
-// 		            }
-
+	// 				 // for each paper in paper layout..
+	// 				for (int c2=0; c2<spread->pagestack.n(); c2++) {
+	// 					PaperStyle *defaultpaper=doc->imposition->GetDefaultPaper();
+	// 					current_dpi = defaultpaper->dpi;
 						
-// 					 // for each layer on the page..
-// 					for (int l=0; l<page->layers.n(); l++) {
-// 						pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning,config);
-// 					}
+	// 					pgindex = spread->pagestack.e[c2]->index;
+	// 					if (pgindex < 0 || pgindex >= doc->pages.n) continue;
+	// 					page = doc->pages.e[pgindex];
+						
+	// 					 // transform to page
+	// 					appendstr(stream,"q\n"); //save ctm
+	// 					//transforms.PushAxes();
+	// 					transforms.PushAxes();
+	// 					transform_copy(m,spread->pagestack.e[c2]->outline->m());
+	// 					sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+	// 							m[0], m[1], m[2], m[3], m[4], m[5]); 
+	// 					appendstr(stream,scratch);
+	// 					transforms.Multiply(m);
 
-// 					appendstr(stream,"Q\n"); //pop ctm, page transform
-// 					transforms.PopAxes();
-// 				}
-// 			}
+	// 					 // set clipping region
+	// 					DBG cerr <<"page flags "<<c2<<":"<<spread->pagestack[c2]->index<<" ==  "<<page->pagestyle->flags<<endl;
+	// 					if ((page->pagestyle->flags & PAGE_CLIPS) || config->layout == PAPERLAYOUT) {
+	// 						pdfSetClipToPath(stream,spread->pagestack.e[c2]->outline,0, nullptr);
+	// 					}
 
-// 			 // print out paper footer
-// 			if (papergroup) {
-// 				appendstr(stream,"Q\n"); //pop papergroup transform
-// 				transforms.PopAxes();
-// 			} else if (spread) {
-// 				appendstr(stream,"Q\n"); //pop papergroup transform
-// 				transforms.PopAxes();
+
+	// 					 // handle object bleeds from other pages
+	// 					if (page->pagebleeds.n && (config->layout == PAPERLAYOUT || config->layout == SINGLELAYOUT)) {
+	// 						 //assume PAGELAYOUT already renders bleeds properly, since that's where the bleed objects come from
+
+	// 						for (int pb = 0; pb < page->pagebleeds.n; pb++) {
+	// 							PageBleed *bleed = page->pagebleeds[pb];
+	// 							if (bleed->index < 0 || bleed->index >= doc->pages.n) continue;
+	// 							Page *otherpage = doc->pages[bleed->index];
+	// 							if (!otherpage || !otherpage->HasObjects()) continue;
+
+	// 							sprintf(scratch,"%.10f %.10f %.10f %.10f %.10f %.10f cm\n ",
+	// 									bleed->matrix[0], bleed->matrix[1], bleed->matrix[2], bleed->matrix[3], bleed->matrix[4], bleed->matrix[5]); 
+	// 							appendstr(stream,"q\n"); //save ctm
+	// 							appendstr(stream,scratch);
+	// 							transforms.PushAndNewAxes(bleed->matrix);
+
+	// 							for (int l = 0; l < otherpage->layers.n(); l++) {
+	// 								pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,otherpage->layers.e(l),log,warning,config);
+	// 							}
+
+	// 							appendstr(stream,"Q\n"); //pop ctm, bleed transform
+	// 							transforms.PopAxes();
+	// 						}
+	// 		            }
+
+							
+	// 					 // for each layer on the page..
+	// 					for (int l=0; l<page->layers.n(); l++) {
+	// 						pdfdumpobj(f,objs,obj,stream,objcount,pageobj->resources,page->layers.e(l),log,warning,config);
+	// 					}
+
+	// 					appendstr(stream,"Q\n"); //pop ctm, page transform
+	// 					transforms.PopAxes();
+	// 				}
+	// 			}
+
+	// 			 // print out paper footer
+	// 			if (papergroup) {
+	// 				appendstr(stream,"Q\n"); //pop papergroup transform
+	// 				transforms.PopAxes();
+	// 			} else if (spread) {
+	// 				appendstr(stream,"Q\n"); //pop papergroup transform
+	// 				transforms.PopAxes();
+				
+	// 			}
+	// //			if (paperrotate>0) {
+	// //				appendstr(stream,"Q\n"); //pop paper rotation transform
+	// //			}
+	// 			//appendstr(stream,"Q\n"); //pop  pt to inches conversion (not really necessary
+	// 			//transforms.PopAxes();
+
+
+
+	// 			 // pdfdumpobj() outputs objects relevant to the stream. Now dump out this
+	// 			 // page's content stream XObject to an object:
+	// 			obj->next = new PdfObjInfo;
+	// 			obj = obj->next;
+	// 			obj->number = objcount++;
+	// 			obj->byteoffset = ftell(f);
+	// 			fprintf(f,"%ld 0 obj\n"
+	// 					  "<< /Length %lu >>\n"
+	// 					  "stream\n",
+	// 						obj->number, strlen(stream));
+	// 			fwrite(stream,1,strlen(stream),f); //write(obj->data,1,obj->len,f);
+	// 			fprintf(f,"\nendstream\n"
+	// 					  "endobj\n");
+	// 			delete[] stream; stream=nullptr;
+
+	// 			pageobj->contents = obj->number;
+	// 			//pageobj gets its own number and byte offset later
+			}
+			if (spread) { delete spread; spread = nullptr; }
+			if (desc) delete[] desc;
+		}
+
+	
+	
+	// 	 // write out pdf /Page dicts, which do not have their object number or offsets yet.
+	// 	int numpages=0;
+	// 	for (pageobj=pageobjs; pageobj; pageobj=(PdfPageInfo *)pageobj->next) numpages++;
+
+	// 	pages = objcount + numpages; //object number of parent Pages dict
+	// 	pageobj = pageobjs;
+	// 	obj->next = pageobj;
+	// 	obj = obj->next; //both obj and pageobj now point to first page object
+
+	// 	while (pageobj) {
+	// 		pageobj->number = objcount++;
+	// 		pageobj->byteoffset = ftell(f);
+
+	// 		fprintf(f,"%ld 0 obj\n",pageobj->number);
+	// 		 //required
+	// 		fprintf(f,"<<\n  /Type /Page\n");
+	// 		fprintf(f,"  /Parent %d 0 R\n",pages);
+	// 		 // would include referenced xobjects!!
+	// 		if (pageobj->resources.attributes.n) {
+	// 			fprintf(f,"  /Resources <<\n");
+	// 			for (int c2=0; c2<pageobj->resources.attributes.n; c2++) {
+	// 				fprintf(f,"    %s <<\n",pageobj->resources.attributes.e[c2]->name);  //eg "/XObject << /X0 4 0 R"
+	// 				fprintf(f,"      %s\n",pageobj->resources.attributes.e[c2]->value);
+	// 				fprintf(f,"    >>\n");
+	// 			}
+	// 			fprintf(f,"  >>\n");
+	// 		} else fprintf(f,"  /Resources << >>\n");
+	// 		fprintf(f,"  /Contents %d 0 R\n",pageobj->contents); //not req, but of course necessary if stuff on page
+
+
+	// 		fprintf(f,"  /Rotate %d\n", pageobj->rotation);   //number of 90 increments to rotate clockwise
+	// //		if (pageobj->rotation==90 || pageobj->rotation==270) {
+	// //			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
+	// //					pageobj->bbox.miny*72, pageobjs->bbox.minx*72,
+	// //					pageobj->bbox.maxy*72, pageobjs->bbox.maxx*72);
+	// //		} else {
+	// //			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
+	// //					pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
+	// //					pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
+	// //		}
+	// 		fprintf(f,"  /MediaBox [%f %f %f %f]\n",
+	// 				pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
+	// 				pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
+
+
+	// 		 //the rest is optional
+	// 		//fprintf(f,"  /LastModified %s\n",lastmoddate);
+	// 		//fprintf(f,"  /CropBox [llx lly urx ury]\n");
+	// 		//fprintf(f,"  /BleedBox [llx lly urx ury]\n");
+	// 		//fprintf(f,"  /TrimBox [llx lly urx ury]\n");
+	// 		//fprintf(f,"  /ArtBox [llx lly urx ury]\n");
+	// 		//fprintf(f,"  /BoxColorInfo << >>\n");
+	// 		//fprintf(f,"  /Group << >>\n"); //group atts dict
+	// 		//fprintf(f,"  /Thumb << >>\n");
+	// 		//fprintf(f,"  /B << >>\n");
+	// 		//fprintf(f,"  /Dur << >>\n");
+	// 		//fprintf(f,"  /Trans << >>\n");
+	// 		//fprintf(f,"  /Annots << >>\n");
+	// 		//fprintf(f,"  /AA << >>\n");
+	// 		//fprintf(f,"  /Metadata << >>\n");
+	// 		//fprintf(f,"  /PieceInfo << >>\n");
+	// 		//fprintf(f,"  /StructParents << >>\n");
+	// 		//fprintf(f,"  /ID ()\n");
+	// 		//fprintf(f,"  /PZ %.10f\n");
+	// 		//fprintf(f,"  /SeparationInfo << >>\n");
+	// 		fprintf(f,">>\nendobj\n"); 
+
+	// 		if (pageobj->next) obj=pageobj->next;
+	// 		pageobj=(PdfPageInfo *)pageobj->next;
+	// 	}
+	
 			
-// 			}
-// //			if (paperrotate>0) {
-// //				appendstr(stream,"Q\n"); //pop paper rotation transform
-// //			}
-// 			//appendstr(stream,"Q\n"); //pop  pt to inches conversion (not really necessary
-// 			//transforms.PopAxes();
-
-
-
-// 			 // pdfdumpobj() outputs objects relevant to the stream. Now dump out this
-// 			 // page's content stream XObject to an object:
-// 			obj->next = new PdfObjInfo;
-// 			obj = obj->next;
-// 			obj->number = objcount++;
-// 			obj->byteoffset = ftell(f);
-// 			fprintf(f,"%ld 0 obj\n"
-// 					  "<< /Length %lu >>\n"
-// 					  "stream\n",
-// 						obj->number, strlen(stream));
-// 			fwrite(stream,1,strlen(stream),f); //write(obj->data,1,obj->len,f);
-// 			fprintf(f,"\nendstream\n"
-// 					  "endobj\n");
-// 			delete[] stream; stream=nullptr;
-
-// 			pageobj->contents = obj->number;
-// 			//pageobj gets its own number and byte offset later
-// 		}
-// 		if (spread) { delete spread; spread = nullptr; }
-// 		if (desc) delete[] desc;
-// 	}
-
-	
-	
-// 	 // write out pdf /Page dicts, which do not have their object number or offsets yet.
-// 	int numpages=0;
-// 	for (pageobj=pageobjs; pageobj; pageobj=(PdfPageInfo *)pageobj->next) numpages++;
-
-// 	pages = objcount + numpages; //object number of parent Pages dict
-// 	pageobj = pageobjs;
-// 	obj->next = pageobj;
-// 	obj = obj->next; //both obj and pageobj now point to first page object
-
-// 	while (pageobj) {
-// 		pageobj->number = objcount++;
-// 		pageobj->byteoffset = ftell(f);
-
-// 		fprintf(f,"%ld 0 obj\n",pageobj->number);
-// 		 //required
-// 		fprintf(f,"<<\n  /Type /Page\n");
-// 		fprintf(f,"  /Parent %d 0 R\n",pages);
-// 		 // would include referenced xobjects!!
-// 		if (pageobj->resources.attributes.n) {
-// 			fprintf(f,"  /Resources <<\n");
-// 			for (int c2=0; c2<pageobj->resources.attributes.n; c2++) {
-// 				fprintf(f,"    %s <<\n",pageobj->resources.attributes.e[c2]->name);  //eg "/XObject << /X0 4 0 R"
-// 				fprintf(f,"      %s\n",pageobj->resources.attributes.e[c2]->value);
-// 				fprintf(f,"    >>\n");
-// 			}
-// 			fprintf(f,"  >>\n");
-// 		} else fprintf(f,"  /Resources << >>\n");
-// 		fprintf(f,"  /Contents %d 0 R\n",pageobj->contents); //not req, but of course necessary if stuff on page
-
-
-// 		fprintf(f,"  /Rotate %d\n", pageobj->rotation);   //number of 90 increments to rotate clockwise
-// //		if (pageobj->rotation==90 || pageobj->rotation==270) {
-// //			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
-// //					pageobj->bbox.miny*72, pageobjs->bbox.minx*72,
-// //					pageobj->bbox.maxy*72, pageobjs->bbox.maxx*72);
-// //		} else {
-// //			fprintf(f,"  /MediaBox [%f %f %f %f]\n",
-// //					pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
-// //					pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
-// //		}
-// 		fprintf(f,"  /MediaBox [%f %f %f %f]\n",
-// 				pageobj->bbox.minx*72, pageobjs->bbox.miny*72,
-// 				pageobj->bbox.maxx*72, pageobjs->bbox.maxy*72);
-
-
-// 		 //the rest is optional
-// 		//fprintf(f,"  /LastModified %s\n",lastmoddate);
-// 		//fprintf(f,"  /CropBox [llx lly urx ury]\n");
-// 		//fprintf(f,"  /BleedBox [llx lly urx ury]\n");
-// 		//fprintf(f,"  /TrimBox [llx lly urx ury]\n");
-// 		//fprintf(f,"  /ArtBox [llx lly urx ury]\n");
-// 		//fprintf(f,"  /BoxColorInfo << >>\n");
-// 		//fprintf(f,"  /Group << >>\n"); //group atts dict
-// 		//fprintf(f,"  /Thumb << >>\n");
-// 		//fprintf(f,"  /B << >>\n");
-// 		//fprintf(f,"  /Dur << >>\n");
-// 		//fprintf(f,"  /Trans << >>\n");
-// 		//fprintf(f,"  /Annots << >>\n");
-// 		//fprintf(f,"  /AA << >>\n");
-// 		//fprintf(f,"  /Metadata << >>\n");
-// 		//fprintf(f,"  /PieceInfo << >>\n");
-// 		//fprintf(f,"  /StructParents << >>\n");
-// 		//fprintf(f,"  /ID ()\n");
-// 		//fprintf(f,"  /PZ %.10f\n");
-// 		//fprintf(f,"  /SeparationInfo << >>\n");
-// 		fprintf(f,">>\nendobj\n"); 
-
-// 		if (pageobj->next) obj=pageobj->next;
-// 		pageobj=(PdfPageInfo *)pageobj->next;
-// 	}
-// 	//obj should now point to the final page object, and pageobj should be nullptr
-	
-// 	 //write out top /Pages page tree node
-// 	pages=objcount++;
-// 	pageobj=pageobjs;
-// 	obj->next=new PdfObjInfo;
-// 	obj=obj->next;
-// 	obj->byteoffset=ftell(f);
-// 	obj->number=pages;
-// 	fprintf(f,"%d 0 obj\n",pages);
-// 	fprintf(f,"<<\n  /Type /Pages\n");
-// 	fprintf(f,"  /Kids [");
-// 	while (pageobj) {
-// 		fprintf(f,"%ld 0 R ",pageobj->number);
-// 		pageobj=dynamic_cast<PdfPageInfo *>(pageobj->next);
-// 		 //pages is not PdfPageInfo, so final obj makes pageobj==nullptr
-// 	}
-// 	fprintf(f,"]\n");
-// 	fprintf(f,"  /Count %d",numpages);
-// 	//can also include (from Page dict): /Resources, /MediaBox, /CropBox, and /Rotate
-// 	fprintf(f,">>\nendobj\n"); 
-	
+	// 	 // write out Outlines
+	// 	//outlines=objcount++;
+	// 	//***
 		
-// 	 // write out Outlines
-// 	//outlines=objcount++;
-// 	//***
-	
-	
-// 	 // write out PageLabels
-// //	if (doc && doc->pageranges.n) {
-// //		pagelabels=objcount++;	
-// //		//***
-// //		pagelabels=-1;
-// //	} else pagelabels=-1;
+		
+	// 	 // write out PageLabels
+	// //	if (doc && doc->pageranges.n) {
+	// //		pagelabels=objcount++;	
+	// //		//***
+	// //		pagelabels=-1;
+	// //	} else pagelabels=-1;
 
-	
-// 	 // write out Root doc catalog dict:
-// 	 // this must be written after Pages and other items' object numbers figured out
-// 	doccatalog=objcount++;
-// 	obj->next=new PdfObjInfo;
-// 	obj=obj->next;
-// 	obj->number=doccatalog;
-// 	obj->byteoffset=ftell(f);
-// 	fprintf(f,"%ld 0 obj\n<<\n",doccatalog);
-// 	 //required fields
-// 	fprintf(f,"  /Type /Catalog\n");
-// 	fprintf(f,"  /Version /1.4\n");
-// 	fprintf(f,"  /Pages %d 0 R\n",pages);
-// 	 //the rest are optional
-// 	if (pagelabels>0) fprintf(f,"  /PageLabels %d 0 R\n",pagelabels);
-// 	if (outlines>0) {
-// 		fprintf(f,"  /PageMode /UseOutlines\n");
-// 		fprintf(f,"  /Outlines %d 0 R\n", outlines);
-// 	}
-// //	if (is booklet type layout....) {
-// //		SignatureImposition *dss=dynamic_cast<SignatureImposition *>(doc->imposition);
-// //		if (dss->IsVertical() && ***)
-// //		fprintf(f,"  /PageLayout /SinglePage\n");
-// //		fprintf(f,"  /PageLayout /OneColumn\n");
-// //		fprintf(f,"  /PageLayout /TwoColumnLeft\n");
-// //		fprintf(f,"  /PageLayout /TowColumnRight\n");
-// //	}
-// 	//fprintf(f,"  /Names %d 0 R\n",     ***);
-// 	//fprintf(f,"  /Dests %d 0 R\n",     ***);
-// 	//fprintf(f,"  /Threads %d 0 R\n",   ***);
-// 	//fprintf(f,"  /OpenAction %d 0 R\n",***);
-// 	//fprintf(f,"  /AA %d 0 R\n",        ***);
-// 	//fprintf(f,"  /URI %d 0 R\n",       ***);
-// 	//fprintf(f,"  /AcroForm %d 0 R\n",  ***);
-// 	//fprintf(f,"  /Metadata %d 0 R\n",  ***);
-// 	//fprintf(f,"  /StructTreeRoot %d 0 R\n",***);
-// 	//fprintf(f,"  /MarkInfo %d 0 R\n",  ***);
-// 	//fprintf(f,"  /Lang (***)\n");
-// 	//fprintf(f,"  /SpiderInfo %d 0 R\n",***);
-// 	//fprintf(f,"  /OutputIntents %d 0 R\n",***);
-// 	fprintf(f,">>\nendobj\n");
+		
+	// 	 // write out Root doc catalog dict:
+	// 	 // this must be written after Pages and other items' object numbers figured out
+	// 	doccatalog=objcount++;
+	// 	obj->next=new PdfObjInfo;
+	// 	obj=obj->next;
+	// 	obj->number=doccatalog;
+	// 	obj->byteoffset=ftell(f);
+	// 	fprintf(f,"%ld 0 obj\n<<\n",doccatalog);
+	// 	 //required fields
+	// 	fprintf(f,"  /Type /Catalog\n");
+	// 	fprintf(f,"  /Version /1.4\n");
+	// 	fprintf(f,"  /Pages %d 0 R\n",pages);
+	// 	 //the rest are optional
+	// 	if (pagelabels>0) fprintf(f,"  /PageLabels %d 0 R\n",pagelabels);
+	// 	if (outlines>0) {
+	// 		fprintf(f,"  /PageMode /UseOutlines\n");
+	// 		fprintf(f,"  /Outlines %d 0 R\n", outlines);
+	// 	}
+	// //	if (is booklet type layout....) {
+	// //		SignatureImposition *dss=dynamic_cast<SignatureImposition *>(doc->imposition);
+	// //		if (dss->IsVertical() && ***)
+	// //		fprintf(f,"  /PageLayout /SinglePage\n");
+	// //		fprintf(f,"  /PageLayout /OneColumn\n");
+	// //		fprintf(f,"  /PageLayout /TwoColumnLeft\n");
+	// //		fprintf(f,"  /PageLayout /TowColumnRight\n");
+	// //	}
+	// 	//fprintf(f,"  /Names %d 0 R\n",     ***);
+	// 	//fprintf(f,"  /Dests %d 0 R\n",     ***);
+	// 	//fprintf(f,"  /Threads %d 0 R\n",   ***);
+	// 	//fprintf(f,"  /OpenAction %d 0 R\n",***);
+	// 	//fprintf(f,"  /AA %d 0 R\n",        ***);
+	// 	//fprintf(f,"  /URI %d 0 R\n",       ***);
+	// 	//fprintf(f,"  /AcroForm %d 0 R\n",  ***);
+	// 	//fprintf(f,"  /Metadata %d 0 R\n",  ***);
+	// 	//fprintf(f,"  /StructTreeRoot %d 0 R\n",***);
+	// 	//fprintf(f,"  /MarkInfo %d 0 R\n",  ***);
+	// 	//fprintf(f,"  /Lang (***)\n");
+	// 	//fprintf(f,"  /SpiderInfo %d 0 R\n",***);
+	// 	//fprintf(f,"  /OutputIntents %d 0 R\n",***);
+	// 	fprintf(f,">>\nendobj\n");
 
-	
-// 	 // write out doc info dict:
-// 	infodict=objcount++;
-// 	time_t t=time(nullptr);
-// 	obj->next=new PdfObjInfo;
-// 	obj=obj->next;
-// 	obj->number=infodict;
-// 	obj->byteoffset=ftell(f);
-// 	fprintf(f,"%ld 0 obj\n<<\n",infodict);
-// 	const char *title=nullptr;
-// 	if (doc) { if (!isblank(doc->Name(0))) title=doc->Name(0); }
-// 	if (config->papergroup) {
-// 		if (!title) title = config->papergroup->Name;
-// 		if (!title) title = config->papergroup->name;
-// 	}
-// 	if (title) fprintf(f,"  /Title (%s)\n",title); //***warning, does not sanity check the string
-// 	//fprintf(f,"  /Author (%s)\n",***);
-// 	//fprintf(f,"  /Subject (%s)\n",***);
-// 	//fprintf(f,"  /Keywords (%s)\n",***);
-// 	//fprintf(f,"  /Creator (Laidout %s)\n",LAIDOUT_VERSION);  //for pdf creators
-// 	//fprintf(f,"  /Producer (Laidout %s)\n",LAIDOUT_VERSION); //for pdf convertors
-// 	//fprintf(f,"  /CreationDate (%s)\n",***);
-// 	char *tmp=newstr(ctime(&t));
-// 	tmp[strlen(tmp)-1]='\0';
-// 	fprintf(f,"  /ModDate (%s)\n",tmp);
-// 	delete[] tmp;
-// 	//fprintf(f,"  /Trapped /False\n");
-// 	fprintf(f,">>\nendobj\n");
-	
-// 	DBG cerr <<"feof:"<<feof(f)<<"  ferror:"<<ferror(f)<<endl;
-	
-// 	 //write xref table
-// 	long xrefpos=ftell(f);
-// 	int count=0;
-// 	for (obj=objs; obj; obj=obj->next) count++; //should be same as objcount
-// 	DBG cerr <<"objcount:"<<objcount<<"  should == count:"<<count<<endl;
+		
+	// 	 // write out doc info dict:
+	// 	infodict=objcount++;
+	// 	time_t t=time(nullptr);
+	// 	obj->next=new PdfObjInfo;
+	// 	obj=obj->next;
+	// 	obj->number=infodict;
+	// 	obj->byteoffset=ftell(f);
+	// 	fprintf(f,"%ld 0 obj\n<<\n",infodict);
+	// 	const char *title=nullptr;
+	// 	if (doc) { if (!isblank(doc->Name(0))) title=doc->Name(0); }
+	// 	if (config->papergroup) {
+	// 		if (!title) title = config->papergroup->Name;
+	// 		if (!title) title = config->papergroup->name;
+	// 	}
+	// 	if (title) fprintf(f,"  /Title (%s)\n",title); //***warning, does not sanity check the string
+	// 	//fprintf(f,"  /Author (%s)\n",***);
+	// 	//fprintf(f,"  /Subject (%s)\n",***);
+	// 	//fprintf(f,"  /Keywords (%s)\n",***);
+	// 	//fprintf(f,"  /Creator (Laidout %s)\n",LAIDOUT_VERSION);  //for pdf creators
+	// 	//fprintf(f,"  /Producer (Laidout %s)\n",LAIDOUT_VERSION); //for pdf convertors
+	// 	//fprintf(f,"  /CreationDate (%s)\n",***);
+	// 	char *tmp=newstr(ctime(&t));
+	// 	tmp[strlen(tmp)-1]='\0';
+	// 	fprintf(f,"  /ModDate (%s)\n",tmp);
+	// 	delete[] tmp;
+	// 	//fprintf(f,"  /Trapped /False\n");
+	// 	fprintf(f,">>\nendobj\n");
+		
+	// 	DBG cerr <<"feof:"<<feof(f)<<"  ferror:"<<ferror(f)<<endl;
+		
+	// 	 //write xref table
+	// 	long xrefpos=ftell(f);
+	// 	int count=0;
+	// 	for (obj=objs; obj; obj=obj->next) count++; //should be same as objcount
+	// 	DBG cerr <<"objcount:"<<objcount<<"  should == count:"<<count<<endl;
 
-// 	fprintf(f,"xref\n%d %d\n",0,count);
-// 	for (obj=objs; obj; obj=obj->next) {
-// 		fprintf(f,"%010lu %05d %c \n",obj->byteoffset,obj->generation,obj->inuse);
-// 	}
+	// 	fprintf(f,"xref\n%d %d\n",0,count);
+	// 	for (obj=objs; obj; obj=obj->next) {
+	// 		fprintf(f,"%010lu %05d %c \n",obj->byteoffset,obj->generation,obj->inuse);
+	// 	}
 
 
-// 	 //write trailer dict, startxref, and EOF
-// 	fprintf(f,"trailer\n<< /Size %d\n",count);
-// 	fprintf(f,"    /Root %ld 0 R\n", doccatalog);
-// 	if (infodict>0) fprintf(f,"    /Info %ld 0 R\n", infodict);
-	
-// 	//fprintf(f,"    /Encrypt %d***\n", encryption dict);
-// 	//fprintf(f,"    /ID %d\n",      2 string id);
-// 	//fprintf(f,"    /Prev %d\n",    previous_xref_section byte offset);
-	
-// 	fprintf(f,">>\n");
-// 	fprintf(f,"startxref\n%ld\n",xrefpos);
-// 	fprintf(f,"%%%%EOF\n");
+	// 	 //write trailer dict, startxref, and EOF
+	// 	fprintf(f,"trailer\n<< /Size %d\n",count);
+	// 	fprintf(f,"    /Root %ld 0 R\n", doccatalog);
+	// 	if (infodict>0) fprintf(f,"    /Info %ld 0 R\n", infodict);
+		
+	// 	//fprintf(f,"    /Encrypt %d***\n", encryption dict);
+	// 	//fprintf(f,"    /ID %d\n",      2 string id);
+	// 	//fprintf(f,"    /Prev %d\n",    previous_xref_section byte offset);
+		
+	// 	fprintf(f,">>\n");
+	// 	fprintf(f,"startxref\n%ld\n",xrefpos);
+	// 	fprintf(f,"%%%%EOF\n");
 
-// 	fclose(f);
-// 	setlocale(LC_ALL,"");
+	// 	fclose(f);
+	// 	setlocale(LC_ALL,"");
 
-// 	 //clean up
-// 	DBG cerr <<"done writing pdf, cleaning up.."<<endl;
-// 	obj=objs;
-// 	while (obj) {
-// 		DBG cerr <<"PbfObjInfo i="<<obj->i<<"  num="<<obj->number<<endl;
-// 		obj=obj->next;
-// 	}
-// 	 //*** double check that this is all that needs cleanup:
-// 	if (objs) delete objs;
+	// 	 //clean up
+	// 	DBG cerr <<"done writing pdf, cleaning up.."<<endl;
+	// 	obj=objs;
+	// 	while (obj) {
+	// 		DBG cerr <<"PbfObjInfo i="<<obj->i<<"  num="<<obj->number<<endl;
+	// 		obj=obj->next;
+	// 	}
+	// 	 //*** double check that this is all that needs cleanup:
+	// 	if (objs) delete objs;
 
 
 		// Additional meta
@@ -897,6 +886,20 @@ int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, Err
 	    // document.GetMetadata().SetAuthor(PdfString("Some One"));
 	    // document.GetMetadata().SetTitle(PdfString("Something"));
 
+	    // char tmp[30];
+	    PdfDate now = PdfDate::LocalNow();
+    	podofodoc.GetMetadata().SetCreationDate(now);
+
+    	if (pdf_files.n) {
+    		// remove old original pages from other files that we don't need anymore
+    		for (int c = 0; c < pdf_files.n; c++) {
+    			for (int c2 = 0; c2 < pdf_files_page_count.e[c]; c++) {
+    				// *** remove page
+    			}
+    		}
+    	}
+
+    	// final write!
 	    podofodoc.Save(filename);
 
 	} catch (PdfError&) {
