@@ -1566,7 +1566,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 			exit(1);
 		}
 
-		DocumentExportConfig *config=filter->CreateConfig(nullptr);
+		DocumentExportConfig *config = filter->CreateConfig(nullptr);
 		//config->dump_in_atts(&att,0,nullptr);
 		 
 		config->doc=doc;
@@ -2131,6 +2131,24 @@ int LaidoutApp::NewProject(Project *proj, ErrorLog &log)
 
 	return 0;
 }
+
+/*! Return the export filter with name as its ExportFilter::VersionName().
+ * First search exact matches to name, but if !exact_only, then also do a
+ * case insensitive search for part of name in VersionName().
+ */
+ImportFilter *FindImportFilter(const char *name)
+{
+	if (!name) return nullptr;
+
+	for (int c = 0; c < laidout->importfilters.n; c++) {
+		if (!strcasecmp(laidout->importfilters.e[c]->VersionName(), name)) {
+			return laidout->importfilters.e[c];
+		}
+	}
+
+	return nullptr;
+}
+
 
 /*! Return the export filter with name as its ExportFilter::VersionName().
  * First search exact matches to name, but if !exact_only, then also do a

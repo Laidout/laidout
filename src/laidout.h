@@ -182,6 +182,7 @@ class LaidoutApp : public Laxkit::anXApp, public Value, public Laxkit::EventRece
 	int NewProject(Project *proj, Laxkit::ErrorLog &log);
 	void PushExportFilter(ExportFilter *filter);
 	ExportFilter *FindExportFilter(const char *name, bool exact_only);
+	ImportFilter *FindImportFilter(const char *name);
 	void PushImportFilter(ImportFilter *filter);
 	void NotifyGeneralErrors(Laxkit::ErrorLog *log);
 	Laxkit::anXWindow *LastView();
