@@ -121,8 +121,8 @@ class ImpositionInterface : virtual public LaxInterfaces::anInterface
     virtual ~ImpositionInterface() {}
     virtual const char *ImpositionType() = 0;
     virtual Imposition *GetImposition() = 0;
-    virtual int SetTotalDimensions(double width, double height) = 0;
-    virtual int GetDimensions(double &width, double &height) = 0; //Return default paper size
+    virtual int SetTotalDimensions(double width, double height) = 0; // Used by ImpositionEditor if imposearg has dims
+    virtual int GetDimensions(double &width, double &height) = 0; // Return default paper size
     virtual int SetPaper(PaperStyle *paper) = 0; // installs duplicate of paper
     virtual int UseThisDocument(Document *doc) = 0;
     virtual int UseThisImposition(Imposition *imp) = 0;
