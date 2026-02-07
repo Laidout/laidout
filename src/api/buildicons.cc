@@ -27,7 +27,7 @@
 
 #include <unistd.h>
 
-#include <iostream>
+#include <lax/debug.h>
 using namespace std;
 
 
@@ -257,7 +257,7 @@ int BuildIconsFunction(ValueHash *context,
 			StringValue *file = dynamic_cast<StringValue*>(files->e(c));
 			if (!file) throw(_("Wrong value format for file!"));
 
-			cout <<"----BuildIcons Parsing file "<<file->str<<endl;
+			DBG cerr <<"----BuildIcons Parsing file "<<file->str<<endl;
 
 			output_px_size = px_sizes.e[c];
 
@@ -380,6 +380,7 @@ int BuildIconsFunction(ValueHash *context,
 
 			// remove temporary document.. todo: you shouldn't have to add a fake document to do this!!
 			laidout->project->Pop(doc);
+			page_image->dec_count();
 			doc = nullptr;
 		}
 
@@ -393,7 +394,7 @@ int BuildIconsFunction(ValueHash *context,
 	
 	if (files) files->dec_count();
 	time_start = times(&tms_) - time_start;
-	cout << "Generated "<<numhits<<" icons in "<< (time_start / (float)sysconf(_SC_CLK_TCK)) <<" seconds."<<endl;
+	DBG cerr << "Generated "<<numhits<<" icons in "<< (time_start / (float)sysconf(_SC_CLK_TCK)) <<" seconds."<<endl;
 	if (value_ret) *value_ret = nullptr;
 	return 0;
 }

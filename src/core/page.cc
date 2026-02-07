@@ -758,8 +758,8 @@ void Page::dump_in_atts(Laxkit::Attribute *att,int flag,Laxkit::DumpContext *con
 							ps = dynamic_cast<PageStyle *>(vv->object);
 							if (ps) ps->inc_count();
 						}
+						v->dec_count();
 					}
-					v->dec_count();
 				}
 			}
 

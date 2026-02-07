@@ -1349,15 +1349,16 @@ int PaperGroup::AddPaper(const char *paper_name,double w,double h,const double *
 
 int PaperGroup::AddPaper(double w,double h,double offsetx,double offsety)
 {
-	PaperStyle *paperstyle=new PaperStyle("paper",w,h,0,72,nullptr);
-	PaperBox *box=new PaperBox(paperstyle, false);
+	PaperStyle *paperstyle = new PaperStyle("paper", w, h, 0, 72, nullptr);
+	PaperBox   *box = new PaperBox(paperstyle, false);
 	paperstyle->dec_count();
 
-	PaperBoxData *boxdata=new PaperBoxData(box);
+	PaperBoxData *boxdata = new PaperBoxData(box);
 	box->dec_count();
-	boxdata->origin(flatpoint(offsetx,offsety));
+	boxdata->origin(flatpoint(offsetx, offsety));
 
 	papers.push(boxdata);
+	boxdata->dec_count();
 	return 0;
 }
 

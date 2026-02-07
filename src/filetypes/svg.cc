@@ -2740,6 +2740,7 @@ int SvgImportFilter::In(const char *file, Laxkit::anObject *context, ErrorLog &l
 		// if doc is new, push into the project
 		if (doc && doc != in->doc) {
 			laidout->project->Push(doc);
+			doc->dec_count();
 			if (!in->no_new_windows) laidout->app->addwindow(newHeadWindow(doc));
 		}
 
