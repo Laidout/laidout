@@ -484,7 +484,7 @@ html: htmlgallery: html out htmlout:
   DONE include scrim in coop/html
   DONE figure out template scheme
   DONE standardize save to directory or file, not just assume file
-image
+image:
   obey object visible
   width, height defaults to 0, which is supposed to autocompute correct w,h from dpi.. check!
   ---0.099---
@@ -514,6 +514,7 @@ pdf: PDF:
   bug: export clones adds extra ref in resources section
   bug: text out very broken.. imageout via gs complains about malformed pdf on fonts
   bug: fonts are not doubled up, each text object is exporting its own
+  implement transparency in paths.. thought this was done already!!!
 
   ---0.099---
   export complex engraving is really, really slow. probably all the string reallocation?
@@ -526,6 +527,13 @@ pdf: PDF:
   implement crop
   start using podofo instead of custom? higher quality pdf output, pdf input options. https://github.com/podofo/podofo, soon to be built from https://github.com/pdfmm/pdfmm
   DONE obey object visible
+podofo out:
+  PathsData
+  implement transparency in paths
+  image mesh
+  color mesh
+  images
+  PdfPageProxy
 Scribus scribus:
   bug: objects are not placed properly on papers
   ---0.099---
@@ -3718,6 +3726,8 @@ Net imposition: netimposition: net:
   bug: spread net lines should not be editable
   finish fit_paper_asymmetric for accordions
   From new doc dialog, select "new net", old imposition still displays in dropdown
+  box:
+    different box templates with different flaps
   tabs, like for folding up polyhedra
     custom tab shapes
     custom tab placement, in case you need to override automatic, like doubling up tabs on an edge
@@ -3741,15 +3751,23 @@ Net imposition: netimposition: net:
 
 netdialog: netinterface:
   modes:
-    unwrap
+    unwrap:
+      pick up faces
+      drop faces
     paperlayout papergroup modifications
     build:
+      inner edge:
+        net fold up or down
+      outer edge:
+        tab or no tab
 	  remove/add shapes
 	  moving around, snapping shapes
 	  merge shapes
+	  draw shapes
+	  curved lines
 	  divide shapes
 	  define binding edge for potential insert to signature stacks
-	  define foldings
+	  define foldings, tag fold state as a spread type
 	  select from resources
 
 polyptych: hedron window:
