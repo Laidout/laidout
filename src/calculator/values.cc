@@ -395,7 +395,7 @@ ObjectDef::ObjectDef(const char *nname,
 					 Value *newval,
 					 const char *type, unsigned int fflags)
 {
-	DBG cerr <<"..creating ObjectDef "<<nname<<endl;
+	DBG cerr <<"..creating ObjectDef "<<object_id<<" "<<nname<<endl;
 
 	name=newstr(nname);
 	Name=newstr(nName);
