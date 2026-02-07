@@ -24,9 +24,7 @@
 #include "impositioneditor.h"
 #include "signatureinterface.h"
 #include "singlesinterface.h"
-
-#include "netimposition.h"
-#include "netdialog.h"
+#include "netinterface.h"
 
 
 #include <lax/debug.h>
@@ -97,7 +95,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 						)
 	: ViewerWindow(parnt,nname,ntitle,
 				   ANXWIN_REMEMBER
-					| VIEWPORT_RIGHT_HANDED | VIEWPORT_BACK_BUFFER | VIEWPORT_NO_RULERS,  //| VIEWPORT_NO_SCROLLERS
+					| VIEWPORT_RIGHT_HANDED | VIEWPORT_BACK_BUFFER, // | VIEWPORT_NO_RULERS,  //| VIEWPORT_NO_SCROLLERS
 					0,0,500,500, 0, nullptr)
 {
 	SetOwner(nowner, mes);
@@ -114,7 +112,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 	tool_signatures = nullptr;
 	tool_net        = nullptr;
 	tool_singles    = nullptr;
-	neteditor       = nullptr;
+	// neteditor       = nullptr;
 	rescale_pages   = 1;
 
 	if (!viewport) {
@@ -128,6 +126,7 @@ ImpositionEditor::ImpositionEditor(Laxkit::anXWindow *parnt,const char *nname,co
 
 	WindowStyle *style = win_themestyle->duplicate();
 	InstallColors(style);
+	style->dec_count();
 	win_themestyle->bg.rgbf(200/255.,200/255.,200/255.);
 	viewport->dp->NewBG(200,200,200);
 	needtodraw = 1;
@@ -355,7 +354,7 @@ int ImpositionEditor::init()
 
 
 
-	Sync(1);	
+	Sync(1);
 
 
 	ChangeImposition(firstimp);
@@ -392,7 +391,8 @@ void ImpositionEditor::send()
 		//if (tool) imp=(Imposition*)(tool->GetImposition()->duplicate());
 		
 	} else if (whichactive == WHICH_Net) {
-		if (neteditor) imp = dynamic_cast<NetDialog*>(neteditor)->getNetImposition();
+		// if (neteditor) imp = dynamic_cast<NetDialog*>(neteditor)->getNetImposition();
+		if (tool_net) imp = (Imposition*)(tool_net->GetImposition());
 
 	} else if (whichactive == WHICH_Singles) {
 		if (tool_singles) imp = (Imposition*)(tool_singles->GetImposition());
@@ -507,6 +507,13 @@ int ImpositionEditor::ChangeImposition(Imposition *newimp)
 
 	PostMessage("");
 
+	if (newimp) {
+		DoubleBBox bb;
+		newimp->GoodWorkspaceSize(bb);
+		viewport->dp->SetSpace(bb.minx, bb.maxx, bb.miny, bb.maxy);
+		viewport->dp->CenterPoint(bb.BBoxPoint(.5,.5));
+	}
+
 	if (dynamic_cast<SignatureImposition*>(newimp)) {
 		whichactive = WHICH_Signature;
 
@@ -526,13 +533,13 @@ int ImpositionEditor::ChangeImposition(Imposition *newimp)
 		if (box->win() != viewport) {
 			app->mapwindow(viewport);
 			// if (singleseditor) app->unmapwindow(singleseditor);
-			if (neteditor) app->unmapwindow(neteditor);
+			// if (neteditor) app->unmapwindow(neteditor);
 
 			box->NewWindow(viewport);
 			Sync(1);
 		}
 		if (tool_singles) RemoveTool(tool_singles->id);
-		// if (tool_net) RemoveTool(tool_net->id);
+		if (tool_net) RemoveTool(tool_net->id);
 
 		SetMenuButton(_("Signature"));
 		return 0;
@@ -554,13 +561,13 @@ int ImpositionEditor::ChangeImposition(Imposition *newimp)
 		WinFrameBox *box=dynamic_cast<WinFrameBox*>(wholelist.e[0]);
 		if (box->win() != viewport) {
 			app->mapwindow(viewport);
-			if (neteditor) app->unmapwindow(neteditor);
+			// if (neteditor) app->unmapwindow(neteditor);
 
 			box->NewWindow(viewport);
 			Sync(1);
 		}
 		if (tool_signatures) RemoveTool(tool_signatures->id);
-		// if (tool_net) RemoveTool(tool_net->id);
+		if (tool_net) RemoveTool(tool_net->id);
 
 		SetMenuButton(_("Singles"));
 		return 0;
@@ -575,24 +582,34 @@ int ImpositionEditor::ChangeImposition(Imposition *newimp)
 			return 0;
 		}
 
-		if (!neteditor) {
-			neteditor = new NetDialog(this,"Net",_("Net"),
-									object_id,"newnet",nullptr,
-									dynamic_cast<NetImposition*>(newimp));
-			app->addwindow(neteditor,0,0);
-		} else {
-			dynamic_cast<ImpositionWindow*>(neteditor)->UseThisImposition(newimp);
+		// if (!neteditor) {
+		// 	neteditor = new NetDialog(this,"Net",_("Net"),
+		// 							object_id,"newnet",nullptr,
+		// 							dynamic_cast<NetImposition*>(newimp));
+		// 	app->addwindow(neteditor,0,0);
+		// } else {
+		// 	dynamic_cast<ImpositionWindow*>(neteditor)->UseThisImposition(newimp);
+		// }
+		if (!tool_net) {
+			tool_net = new NetInterface(viewport->dp);
 		}
-
-		WinFrameBox *box = dynamic_cast<WinFrameBox*>(wholelist.e[0]);
-		if (box->win() != neteditor) {
-			app->unmapwindow(viewport);
-			// if (singleseditor) app->unmapwindow(singleseditor);
-			app->mapwindow(neteditor);
-
-			box->NewWindow(neteditor);
-			Sync(1);
+		if (tool != tool_net) {
+			if (tool) tool->dec_count();
+			tool = tool_net;
+			tool->inc_count();
 		}
+		tool->UseThisImposition(newimp);
+		AddTool(tool, 1, 0);
+
+		// WinFrameBox *box = dynamic_cast<WinFrameBox*>(wholelist.e[0]);
+		// if (box->win() != neteditor) {
+		// 	app->unmapwindow(viewport);
+		// 	// if (singleseditor) app->unmapwindow(singleseditor);
+		// 	app->mapwindow(neteditor);
+
+		// 	box->NewWindow(neteditor);
+		// 	Sync(1);
+		// }
 
 		SetMenuButton(_("Net"));
 	}

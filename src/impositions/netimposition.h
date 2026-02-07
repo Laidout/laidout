@@ -105,6 +105,7 @@ class NetImposition : public Imposition
 	
 	 //new for this class:
 	virtual Polyptych::AbstractNet *AbstractNetFromFile(const char *filename);
+	virtual int InstallAbstractNet(Polyptych::AbstractNet *new_abstract);
 	virtual int SetNetFromFile(const char *file);
 	virtual int SetNet(const char *nettype);
 	virtual int SetNet(Polyptych::Net *newnet);

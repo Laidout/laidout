@@ -665,22 +665,22 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 {
 	if (!nets.n) return nullptr;
 	//if (!doc || pagenum<0 || pagenum>=doc->pages.n) return nullptr; ***
-	if (pagenum<0 || pagenum>=numpages) return nullptr;
+	if (pagenum < 0 || pagenum >= numpages) return nullptr;
 
-	int isbez=0;
-	int n=0;
-	flatpoint *pts=nullptr;
+	int isbez = 0;
+	int n = 0;
+	flatpoint *pts = nullptr;
 	if (maptoabstractnet && abstractnet) {
-		 //existing nets may or may not have the face defined, so it is safer,
-		 //though sometimes slower, to grab from the abstract net
-		NetFace *face=abstractnet->GetFace(pagenum%abstractnet->NumFaces(),scalefromnet);
-		isbez=face->getOutline(&n,&pts,0);
+		// existing nets may or may not have the face defined, so it is safer,
+		// though sometimes slower, to grab from the abstract net
+		NetFace *face = abstractnet->GetFace(pagenum % abstractnet->NumFaces(), scalefromnet);
+		isbez = face->getOutline(&n, &pts, 0);
 		delete face;
 
 	} else {
-		 //the face is in a net, page numbers are mapped by active nets and FACE_Actual faces
+		// the face is in a net, page numbers are mapped by active nets and FACE_Actual faces
 
-		 //map document page number to a particular net and net face index
+		// map document page number to a particular net and net face index
 		NetFace face;
 		int neti, netfacei;
 		int numactive = numActiveFaces();
@@ -688,39 +688,54 @@ LaxInterfaces::SomeData *NetImposition::GetPageOutline(int pagenum,int local)
 			DBGE("numactive faces is 0! shouldn't happen!!");
 		}
 		netfacei = (numactive != 0 ? pagenum % numactive : 0);
-		for (neti=0; neti<nets.n; neti++) {
+		for (neti = 0; neti < nets.n; neti++) {
 			if (nets.e[neti]->active) {
-				if (netfacei-nets.e[neti]->faces.n<0) break;
-				netfacei-=nets.e[neti]->faces.n;
+				if (netfacei - nets.e[neti]->numActual() < 0) break;
+				netfacei -= nets.e[neti]->numActual();
 			}
 		}
-		DBG if (neti==nets.n) cerr <<"*** Bad news: page index not mapped to any net face"<<endl;
+		if (neti == nets.n) {
+			DBGE("*** Bad news: page index not mapped to any net face");
+			return nullptr;
 
-		face=*nets.e[neti]->faces.e[netfacei];
-		
-		double scaling=norm(nets.e[neti]->xaxis()); //theoretically, this will be same as scalefromnet
-		for (int c=0; c<face.edges.n; c++) {
-			Coordinate *t,*coord=face.edges.e[c]->points;
-			t=coord;
-			do {
-				t->x(scaling*t->x()); //to paper scale
-				t->y(scaling*t->y()); //to paper scale
-				t=t->next;
-			} while (t && t!=coord);
 		}
 
-		isbez=face.getOutline(&n,&pts,0);
+		int ni = netfacei;
+		for (int ii = 0; ii < nets.e[neti]->faces.n; ii++) {
+			NetFace *f = nets.e[neti]->faces.e[ii];
+			if (f->tag == FACE_Actual) {
+				if (ni == netfacei) {
+					// note this should always happen per above checks
+					face = *nets.e[neti]->faces.e[ii];
+					break;
+				}
+				ni++;
+			}
+		}
+
+		double scaling = norm(nets.e[neti]->xaxis());  // theoretically, this will be same as scalefromnet
+		for (int c = 0; c < face.edges.n; c++) {
+			Coordinate *t, *coord = face.edges.e[c]->points;
+			t = coord;
+			do {
+				t->x(scaling * t->x());  // to paper scale
+				t->y(scaling * t->y());  // to paper scale
+				t = t->next;
+			} while (t && t != coord);
+		}
+
+		isbez = face.getOutline(&n, &pts, 0);
 	}
 
-	PathsData *newpath=new PathsData(); //count==1
+	PathsData *newpath = new PathsData();  // count==1
 	newpath->style |= PathsData::PATHS_Ignore_Weights;
-	unsigned long flag=(isbez==2 ? POINT_TONEXT : POINT_VERTEX);
-	for (int c=0; c<n; c++) {
-		newpath->append(pts[c].x,pts[c].y,flag);
-		if (isbez==2) {
-			if (flag==POINT_TONEXT) flag=POINT_VERTEX;
-			else if (flag==POINT_VERTEX) flag=POINT_TOPREV;
-			else flag=POINT_TONEXT;
+	unsigned long flag = (isbez == 2 ? POINT_TONEXT : POINT_VERTEX);
+	for (int c = 0; c < n; c++) {
+		newpath->append(pts[c].x, pts[c].y, flag);
+		if (isbez == 2) {
+			if      (flag == POINT_TONEXT) flag = POINT_VERTEX;
+			else if (flag == POINT_VERTEX) flag = POINT_TOPREV;
+			else flag = POINT_TONEXT;
 		}
 	}
 	newpath->close();
@@ -1388,6 +1403,18 @@ AbstractNet *NetImposition::AbstractNetFromFile(const char *filename)
 
 	//***try to load a simple net...
 	return nullptr;
+}
+
+int NetImposition::InstallAbstractNet(Polyptych::AbstractNet *new_abstract)
+{
+	if (abstractnet != new_abstract) {
+		abstractnet->dec_count();
+		abstractnet = new_abstract;
+		abstractnet->inc_count();
+		DBGW("*** should implement net reset here");
+	}
+
+	return 0;
 }
 
 //! Try to set up imposition based on file.

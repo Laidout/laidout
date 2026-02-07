@@ -26,7 +26,7 @@ objs= \
 	signatures.o \
 	signatureinterface.o \
 	singlesinterface.o \
-	netdialog.o \
+	netinterface.o \
 	polyptychwindow.o
 
 #frompolyptych= glbase.o  gloverlay.o  hedronwindow.o  nets.o  poly.o  polyrender.o

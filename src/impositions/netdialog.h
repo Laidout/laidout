@@ -16,6 +16,9 @@
 #define NEDIALOG_H
 
 
+**** DEPRECATED ****
+
+
 #include <lax/rowframe.h>
 #include <lax/lineinput.h>
 #include <lax/checkbox.h>

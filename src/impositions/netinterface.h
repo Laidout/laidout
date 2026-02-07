@@ -19,6 +19,7 @@
 
 #include <lax/anxapp.h>
 #include <lax/buttondowninfo.h>
+#include <lax/utf8string.h>
 
 #include "netimposition.h"
 #include "../interfaces/paperinterface.h"
@@ -35,7 +36,9 @@ namespace Laidout {
 class PanoramaInfo : public Laxkit::anObject
 {
   public:
-	char *filename;
+	char *filename = nullptr;
+	char *polyhedron_file = nullptr;
+	char *sphere_file = nullptr;
 	int spheremap_width;
 	int spheremap_height;
 	Laxkit::Basis extra_basis;
@@ -44,6 +47,7 @@ class PanoramaInfo : public Laxkit::anObject
 	unsigned char *spheremap_data_rotated;
 
 	PanoramaInfo(const char *file);
+	~PanoramaInfo();
 
 	int SavePolyptych(const char *saveto);
 	int RenderPanorama(Document *doc, const Laxkit::Basis &basis_tweak);
@@ -60,6 +64,8 @@ class NetInterface : virtual public ImpositionInterface
 	Laxkit::ShortcutHandler *sc;
 	virtual int PerformAction(int action);
 
+	void MakePaperInterface();
+
   public:
 	double cylinderscale;
 	int touchmode;
@@ -75,50 +81,57 @@ class NetInterface : virtual public ImpositionInterface
 	bool draw_overlays;
 	bool draw_papers;
 
+	Laxkit::ScreenColor color_potential;
+	Laxkit::ScreenColor color_face;
+
 	Document *doc = nullptr;
-	NetImposition *original_netimp;
-	NetImposition *current_netimp;
-	AbstractNet *abstract_net;
-	Net *currentnet;
+	NetImposition *original_netimp = nullptr;
+	NetImposition *current_netimp = nullptr;
+	Polyptych::Net *currentnet = nullptr;
 	int current_paper_spread = -1;
 
-	Polyhedron *poly;
+	Polyptych::AbstractNet *abstract_net = nullptr;
+	Polyptych::Polyhedron *poly = nullptr; // convenience cast for abstract_net
+	Polyptych::BasicNet *net = nullptr; // convenience cast for abstract_net
 
-	Laxkit::RefPtrStack<Net> nets;
-	PaperGroup *papers;
-	PaperBox *default_paper;
+	// Laxkit::RefPtrStack<Polyptych::Net> nets; // each net->info is the index of the original face that acts as the seed
+ 
+	PaperGroup *papers = nullptr;
+	PaperBox *default_paper = nullptr;
 
 	int currentpotential; //index in currentnet->faces, or -1
 	int currentface;      //index in Polyhedron of current face, or -1
-	int currentfacestatus;
+	bool hover_face_is_leaf;
 
-
-	// messages and overlays
-	Utf8String currentmessage, lastmessage;
-
-	double pad; //for overlay text
+	int hover_group = -1;
+	int hover_net = -1;
+	int hover_index = -1;
+	// int hover_overlay;
+	int mouseover_group;  //which section mouseover_overlay is index in
 	int mouseover_overlay; //which overlay mouse is currently over
 	int mouseover_index;
-	int mouseover_group;  //which section mouseover_overlay is index in
-	int mouseover_paper;
 	int grab_overlay;     //if lbdown on an overlay, all input corresponds to that one
-	ActionType active_action; //determined by current overlay, affects behavior of left mouse button
+	int active_action; //determined by current overlay, affects behavior of left mouse button
 
-	Laxkit::PtrStack<Overlay> overlays;
-	Laxkit::PtrStack<Overlay> paperoverlays;
+	// messages and overlays
+	Laxkit::Utf8String currentmessage, lastmessage;
+
+	double pad; //for overlay text
+	
+
+	// Laxkit::PtrStack<Overlay> overlays;
+	// Laxkit::PtrStack<Overlay> paperoverlays;
 
 
-	NetInterface(anXWindow *parnt,const char *nname,const char *ntitle,unsigned long nstyle,
-		 		 int xx,int yy,int ww,int hh,int brder,
-				 NetImposition *new_net);
+	NetInterface(Laxkit::Displayer *dp);
 	virtual ~NetInterface();
 	virtual const char *whattype() { return "NetInterface"; }
+	virtual const char *whatdatatype() { return nullptr; }
 	virtual const char *IconId() { return "NetInterface"; }
 	virtual const char *Name();
-	virtual int init();
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
-	virtual void Refresh();
+	virtual int Refresh();
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *kb);
 	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse);
 	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
@@ -130,49 +143,36 @@ class NetInterface : virtual public ImpositionInterface
 	virtual int Event(const Laxkit::EventData *data,const char *mes);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	
-	// // hedron gl mapping
-	// virtual void installSpheremapTexture(int definetid);
-	// virtual void triangulate(Laxkit::spacepoint p1 ,Laxkit::spacepoint p2 ,Laxkit::spacepoint p3,
-	// 						 Laxkit::spacepoint p1o,Laxkit::spacepoint p2o,Laxkit::spacepoint p3o,
-	// 						 int n);
-	// virtual void mapPolyhedronTexture(Thing *thing);
-	// virtual Thing *makeGLPolyhedron();
+	virtual void Clear(LaxInterfaces::SomeData *d);
+	virtual int InterfaceOn();
 
-	
-	// drawing
-	virtual void reshape (int x, int y, int w, int h);
-	virtual void transparentFace(int face, double r, double g, double b, double a);
-	virtual void drawPotential(Net *net, int face);
-	
 	// net building
 	virtual int Reseed(int original);
-	virtual int recurseUnwrap(Net *netf, int fromneti, Net *nett, int toneti);
-	virtual void recurseCache(Net *net,int neti);
-	virtual int unwrapTo(int from,int to);
-	virtual Net *establishNet(int original);
+	virtual int recurseUnwrap(Polyptych::Net *netf, int fromneti, Polyptych::Net *nett, int toneti);
+	// virtual void recurseCache(Polyptych::Net *net,int neti);
+	// virtual int unwrapTo(int from,int to);
+	virtual Polyptych::Net *establishNet(int original);
 	virtual int removeNet(int netindex);
-	virtual int removeNet(Net *net);
-	virtual Net *findNet(int id);
+	virtual int removeNet(Polyptych::Net *net);
+	virtual Polyptych::Net *findNet(int id);
 
 	// mouse position
-	virtual int findCurrentPotential();
-	virtual int findCurrentFace();
+	virtual int findCurrentPotential(const Laxkit::flatpoint &p, int &neti);
+	virtual int findCurrentFace(const Laxkit::flatpoint &p, int &neti);
 	virtual int scanPaper(int x,int y, int &index);
-	virtual Laxkit::flatpoint pointInNetPlane(int x,int y);
-
-	// misc
-	virtual int changePaper(int towhich,int index);
+	virtual int scanOverlays(int x,int y, int *action,int *index,int *group);
+	// virtual Laxkit::flatpoint pointInNetPlane(int x,int y);
 
 	// input/output
-	virtual int SavePolyptych(const char *saveto);
-	virtual void UseGenericImageData(double fg_r=-1, double fg_g=-1, double fg_b=-1,  double bg_r=-1, double bg_g=-1, double bg_b=-1);
-	virtual int InstallImage(const char *file);
+	// virtual int SavePolyptych(const char *saveto);
+	// virtual void UseGenericImageData(double fg_r=-1, double fg_g=-1, double fg_b=-1,  double bg_r=-1, double bg_g=-1, double bg_b=-1);
+	// virtual int InstallImage(const char *file);
 	virtual int InstallPolyhedron(const char *file);
-	virtual int InstallPolyhedron(Polyhedron *ph);
-	virtual int SetFiles(const char *hedron, const char *image, const char *project);
-	virtual int AddNet(Net *net);
-	virtual int AddPaper(PaperBound *paper);
-	virtual Polyhedron *defineCube();
+	virtual int InstallPolyhedron(Polyptych::Polyhedron *ph);
+	// virtual int SetFiles(const char *hedron, const char *image, const char *project);
+	virtual int AddNet(Polyptych::Net *net);
+	// virtual int AddPaper(PaperStyle *paper);
+	// virtual Polyptych::Polyhedron *defineCube();
 
 	// from ImpositionEditor:
     virtual const char *ImpositionType() { return "NetImposition"; }
@@ -184,7 +184,7 @@ class NetInterface : virtual public ImpositionInterface
     virtual int UseThisImposition(Imposition *imp);
 
     virtual int ShowThisPaperSpread(int index);
-    virtual void ShowSplash(int yes);
+    virtual void ShowSplash(int yes) {}
 };
 
 } //namespace Laidout

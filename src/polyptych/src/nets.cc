@@ -1045,9 +1045,9 @@ Net *Net::duplicate()
  */
 int Net::pathOfFace(int i, int *n, flatpoint **p, int convert)
 {
-	if (i<0 || i>=faces.n) return 0;
+	if (i < 0 || i >= faces.n) return 0;
 
-	return faces.e[i]->getOutline(n,p,convert);
+	return faces.e[i]->getOutline(n, p, convert);
 }
 
 //! Return the index of the first net face that contains pp, or -1.
@@ -1057,21 +1057,23 @@ int Net::pathOfFace(int i, int *n, flatpoint **p, int convert)
 int Net::pointinface(flatpoint pp, int innetcoords)
 {
 	if (!innetcoords) {
-		double i[6];
-		transform_invert(i,m());
-		pp=transform_point(i,pp);
+		double mi[6];
+		transform_invert(mi, m());
+		pp = transform_point(mi, pp);
 	}
-	int c,t,n;
-	flatpoint *pts=nullptr;
-	for (c=0; c<faces.n; c++) {
-		t=pathOfFace(c,&n,&pts,1);
-		if (t==1) { if (point_is_in(pp,pts,n)) t=1000; }
-		else if (t==2) { if (point_is_in_bez(pp,pts,n)) t=1000; }
-
-		delete[] pts; pts=nullptr;
-		if (t==1000) {
-			return c;
+	int c, t, n;
+	flatpoint *pts = nullptr;
+	for (c = 0; c < faces.n; c++) {
+		t = pathOfFace(c, &n, &pts, 1);
+		if (t == 1) {
+			if (point_is_in(pp, pts, n)) t = 1000;
+		} else if (t == 2) {
+			if (point_is_in_bez(pp, pts, n)) t = 1000;
 		}
+
+		delete[] pts;
+		pts = nullptr;
+		if (t == 1000) return c;
 	}
 	return -1;
 }

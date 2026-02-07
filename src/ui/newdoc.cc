@@ -26,7 +26,6 @@
 #include "../impositions/singles.h"
 #include "../impositions/netimposition.h"
 #include "../impositions/impositioneditor.h"
-#include "../impositions/netdialog.h"
 #include "../impositions/signatures.h"
 #include "../core/utils.h"
 #include "../filetypes/scribus.h"

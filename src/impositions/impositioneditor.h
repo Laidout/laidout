@@ -32,7 +32,7 @@ class ImpositionEditor : public LaxInterfaces::ViewerWindow
 	ImpositionInterface *tool_net;
 	ImpositionInterface *tool_singles;
 
-	Laxkit::anXWindow *neteditor;
+	// Laxkit::anXWindow *neteditor;
 	
 	int whichactive;
 	Imposition *firstimp;

@@ -139,7 +139,6 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	double snap_px_threshhold;
 	double snap_running_angle;
 
-	virtual int scan(int x,int y);
 	virtual void CreateMaybebox(Laxkit::flatpoint p);
 	virtual int SnapBoxes();
 	
@@ -174,7 +173,7 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	virtual void Clear(LaxInterfaces::SomeData *d);
 	virtual Laxkit::MenuInfo *ContextMenu(int x,int y,int deviceid, Laxkit::MenuInfo *menu);
 	virtual int Event(const Laxkit::EventData *e,const char *mes);
-
+	virtual int scan(int x,int y);
 	
 	 // return 0 if interface absorbs event, MouseMove never absorbs: must return 1;
 	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *d);
@@ -187,7 +186,6 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	virtual void DrawGroup(PaperGroup *group, bool shadow, bool fill, bool arrow, int which=3, bool with_decs = false);
 	virtual int DrawDataDp(Laxkit::Displayer *tdp,LaxInterfaces::SomeData *tdata,
 					Laxkit::anObject *a1=nullptr,Laxkit::anObject *a2=nullptr,int info=1);
-
 	
 	virtual int UseThis(Laxkit::anObject *ndata,unsigned int mask=0); 
 	//virtual int DrawData(Laxkit::anObject *ndata,

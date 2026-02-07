@@ -141,7 +141,7 @@ otherobjs= \
 	impositions/imposition.o \
 	impositions/impositioneditor.o \
 	impositions/impositions.o \
-	impositions/netdialog.o \
+	impositions/netinterface.o \
 	impositions/netimposition.o \
 	impositions/polyptychwindow.o \
 	impositions/signatures.o \
