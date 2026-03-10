@@ -3749,8 +3749,11 @@ Net imposition: netimposition: net:
   DONE netdialog needs a paper selector
   DONE better linestyle support for displayed lines
 
-netdialog: netinterface:
+netinterface: netdialog:
   modes:
+    ux:
+      hover indicate pick up/drop
+      DONE fill in faces
     unwrap:
       pick up faces
       drop faces
