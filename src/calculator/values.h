@@ -24,6 +24,7 @@
 #include <lax/colorevents.h>
 
 #include <lax/shortcuts.h>
+#include <lax/utf8string.h>
 
 #include "../core/fieldplace.h"
 
@@ -598,6 +599,7 @@ class StringValue : public Value, virtual public FunctionEvaluator
   public:
 	char *str;
 	StringValue(const char *s=NULL, int len=-1);
+	StringValue(const Laxkit::Utf8String &str);
 	virtual ~StringValue() { if (str) delete[] str; }
 	virtual const char *whattype() { return "StringValue"; }
 	virtual int getValueStr(char *buffer,int len);

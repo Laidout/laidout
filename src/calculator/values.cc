@@ -4564,7 +4564,14 @@ int QuaternionValue::Evaluate(const char *func,int len, ValueHash *context, Valu
  */
 
 StringValue::StringValue(const char *s, int len)
-{ str=newnstr(s,len); }
+{
+	str = newnstr(s,len);
+}
+
+StringValue::StringValue(const Laxkit::Utf8String &str)
+{
+	this->str = newstr(str.c_str());
+}
 
 /*! Warning! This quotes the string.
  */
