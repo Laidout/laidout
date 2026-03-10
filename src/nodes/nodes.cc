@@ -8066,7 +8066,7 @@ void ExportNode::ExportNow(DocumentExportConfig *config)
 	}
 
 	ErrorLog log;
-	int status = export_document(config, log);
+	int status = export_document(config, log, nullptr);
 
 	if (status != 0) {
 		char *msg = log.FullMessageStr();
