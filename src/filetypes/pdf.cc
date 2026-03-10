@@ -572,7 +572,7 @@ int pdfSetClipToPath(char *&stream,LaxInterfaces::SomeData *outline,int iscontin
  *
  * Document tree is parsed to create a list of objects. Then the whole list is output at once.
  */
-int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DocumentExportConfig *config=dynamic_cast<DocumentExportConfig *>(context);
 	if (!config) return 1;
@@ -612,7 +612,7 @@ int PdfExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		return 3;
 	}
 
-
+	if (results) results->Push(new StringValue(file), 1);
 	setlocale(LC_ALL,"C");
 	
 	DBG cerr <<"=================== start pdf out range "<<config->range.ToString(false, false, false)<<", paper override:"

@@ -42,7 +42,7 @@ class PodofoPlanOutFilter : public ExportFilter
 	virtual const char *FilterClass() { return "document"; }
 	virtual ObjectDef *GetObjectDef();
 	
-	virtual int Out(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
+	virtual int Out(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log, ExportResults *results);
 };
 
 

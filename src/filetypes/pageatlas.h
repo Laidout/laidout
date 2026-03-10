@@ -46,7 +46,7 @@ class PageAtlasExportFilter : public ExportFilter
 	virtual ObjectDef *GetObjectDef();
 	virtual DocumentExportConfig *CreateConfig(DocumentExportConfig *fromconfig);
 
-	virtual int Out(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
+	virtual int Out(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log, ExportResults *results);
 
 	//virtual Laxkit::anXWindow *ConfigDialog() { return NULL; }
 	//virtual int Verify(Laxkit::anObject *context); //preflight checker

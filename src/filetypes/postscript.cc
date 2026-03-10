@@ -107,9 +107,9 @@ const char *PsOutFilter::VersionName()
 }
 
 //! Save the document as a Postscript file.
-int PsOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int PsOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
-	return psout(filename,context,log);
+	return psout(filename, context, log, results);
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.
@@ -147,9 +147,9 @@ const char *EpsOutFilter::VersionName()
 //! Save the document as an EPS file.
 /*!
  */
-int EpsOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int EpsOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
-	return epsout(filename,context,log);
+	return epsout(filename, context, log, results);
 }
 
 //! Try to grab from stylemanager, and install a new one there if not found.

@@ -533,7 +533,7 @@ ObjectDef *PageAtlasExportFilter::GetObjectDef()
 
 
 //! Export the document as a PageAtlas file.
-int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DBG cerr <<"-----PageAtlas export start-------"<<endl;
 
@@ -734,6 +734,7 @@ int PageAtlasExportFilter::Out(const char *filename, Laxkit::anObject *context, 
 				// file.Sprintf("%s-%d-%d.png", basename.c_str(), img_start_num, img_num);
 				file.Sprintf(fname_fmt.c_str(), basename.c_str(), img_start_num, img_num);
 				wholeimg->Save(file.c_str());
+				if (results) results->Push(new StringValue(file), 1);
 
 				subs_on_image = 0;
 				img_start_num = img_num+1;

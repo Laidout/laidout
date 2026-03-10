@@ -1641,7 +1641,7 @@ DocumentExportConfig *SvgOutputFilter::CreateConfig(DocumentExportConfig *fromco
  * \todo *** should have option of rasterizing or approximating the things not supported in svg, such 
  *    as patch gradients
  */
-int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DocumentExportConfig *dout=dynamic_cast<DocumentExportConfig *>(context);
 	if (!dout) return 1;
@@ -1691,6 +1691,7 @@ int SvgOutputFilter::Out(const char *filename, Laxkit::anObject *context, ErrorL
 		return 3;
 	}
 
+	if (results) results->Push(new StringValue(file), 1);
 	setlocale(LC_ALL,"C");
 
 	double PPINCH = DEFAULT_PPINCH;

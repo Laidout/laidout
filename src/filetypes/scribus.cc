@@ -141,7 +141,7 @@ int exportImposedScribus(Document *doc,const char *imposeout)
 
 	config.filter=&filter;
 	ErrorLog log;
-	int err=export_document(&config,log);
+	int err = export_document(&config, log, nullptr);
 	return err;
 }
 
@@ -363,7 +363,7 @@ static int countGroups(Group *g)
 
 
 //! Export the document as a Scribus file.
-int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DBG cerr <<"-----Scribus export start-------"<<endl;
 
@@ -442,7 +442,7 @@ int ScribusExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		return 3;
 	}
 	
-
+	if (results) results->Push(new StringValue(file), 1);
 	setlocale(LC_ALL,"C");
 
 	int warning = 0;

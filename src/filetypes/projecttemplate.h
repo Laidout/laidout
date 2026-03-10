@@ -51,6 +51,7 @@ class ExportTemplate
 {
   public:
   	DocumentExportConfig *custom_base_export = nullptr;
+  	Utf8String base_export_id; // optional ref to results of ProjectTemplate::export_filters
 
   	enum Roll { OneOff, PerSpread };
   	Roll roll = OneOff;

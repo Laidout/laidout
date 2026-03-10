@@ -458,7 +458,7 @@ ObjectDef *ImageExportFilter::GetObjectDef()
  * 
  * Currently uses an ImageExportConfig.
  */
-int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	ImageExportConfig *out=dynamic_cast<ImageExportConfig *>(context);
 	if (!out) {
@@ -696,6 +696,8 @@ int ImageExportFilter::Out(const char *filename, Laxkit::anObject *context, Erro
 	int err = img->Save(filename, out->image_format);
 	if (err) {
 		log.AddMessage(_("Could not save the image"), ERROR_Fail);
+	} else {
+		if (results) results->Push(new StringValue(filename), 1);
 	}
 	img->dec_count();
 

@@ -16,6 +16,8 @@
 #define PSOUT_H
 
 #include "../core/document.h"
+#include "../filetypes/filefilters.h"
+
 #include <cstdio>
 
 
@@ -35,8 +37,8 @@ void psFlushCtms();
 
 void psdumpobj(FILE *f,LaxInterfaces::SomeData *obj);
 int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing=0);
-int  psout(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
-int epsout(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log);
+int  psout(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log, ExportResults *results);
+int epsout(const char *filename, Laxkit::anObject *context, Laxkit::ErrorLog &log, ExportResults *results);
 
 } // namespace Laidout
 

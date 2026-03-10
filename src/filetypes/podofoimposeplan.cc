@@ -119,7 +119,7 @@ static void podofodumppage(FILE *f,const double *mm,int source,int target)
  *
  * \todo Need to implement something for printer marks
  */
-int PodofoPlanOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int PodofoPlanOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -165,6 +165,7 @@ int PodofoPlanOutFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		return 3;
 	}
 
+	if (results) results->Push(new StringValue(file), 1);
 	setlocale(LC_ALL,"C");
 
 	 //figure out paper size and orientation

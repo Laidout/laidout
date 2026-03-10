@@ -305,7 +305,7 @@ int psSetClipToPath(FILE *f,LaxInterfaces::SomeData *outline,int iscontinuing)//
  * \todo DocumentMedia comment must be enhanced. Types of media are according to each paper
  *   in papergroup
  */
-int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -389,6 +389,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 		return 3;
 	}
 
+	if (results) results->Push(new StringValue(file), 1);
 	setlocale(LC_ALL,"C");
 
 
@@ -680,7 +681,7 @@ int psout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
  *   things, thus reduce ps file size substantially..
  * \todo *** bounding box should more accurately reflect the drawn extent.. just does paper bounds here
  */
-int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DocumentExportConfig *out = dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -760,12 +761,14 @@ int epsout(const char *filename, Laxkit::anObject *context, ErrorLog &log)
 
 
 	FILE *f = open_file_for_writing(filename,0,&log);
-	delete[] file;
 	if (!f) {
 		if (spread) { delete spread; spread = nullptr; }
+		delete[] file;
 		return 1;
 	}
 	
+	delete[] file;
+	if (results) results->Push(new StringValue(filename), 1);
 	setlocale(LC_ALL,"C");
 
 

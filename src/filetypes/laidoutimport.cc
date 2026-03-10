@@ -134,7 +134,7 @@ ObjectDef *LaidoutOutFilter::GetObjectDef()
  *   and then otherwise "Letter", or choose a size that is big enough to hold the spreads
  * \todo for singles, should figure out what paper size to export as..
  */
-int LaidoutOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int LaidoutOutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DocumentExportConfig *out=dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -183,6 +183,7 @@ int LaidoutOutFilter::Out(const char *filename, Laxkit::anObject *context, Error
 //	
 //	fclose(f);
 //	setlocale(LC_ALL,"");
+	if (results) results->Push(new StringValue(file), 1);
 	delete[] file;
 	return 0;
 }

@@ -277,25 +277,72 @@ bool ProjectTemplate::Export(Laxkit::ErrorLog &log)
 	// do any direct copying
 	for (int c = 0; c < copy.n; c++) {
 		CopyPattern *cc = copy.e[c];
-		RecursiveCopy(project_template_path, cc->src_pattern, cc->exclude_pattern, cc->dest_pattern);
+		int err = RecursiveCopy(project_template_path, cc->src_pattern, cc->exclude_pattern, cc->dest_pattern);
+		if (err != 0) {
+			log.AddError(_("Could not copy files"));
+			return false;
+		}
 	}
+
+	// set up context
+	ValueHash context;
 
 	// generate files from document pages
 	for (int c = 0; c < export_filters.n; c++) {
-		***
+		DocumentExportConfig *config = export_filters.e[c];
+		if (!config->filter) {
+			log.AddWarning(0,0,0, _("Export config missing filter. Skipping: %s"), config->Id());
+			continue;
+		}
+
+		ErrorResult *res = new ErrorResults;
+		res->Id(config->Id());
+		context.push(config->Id(), res, -1, true);
+		// results.push(res);
+		// res->dec_count();
+		int err = config->filter->Out(nullptr, config, log, res);
+		if (err > 0) return false;
 	}
 
 	// process templates
+	char *scratch = nullptr;
+	int scratch_len = 0;
 	for (int c = 0; status && c < templates.n; c++) {
 		Template *template = templates.e[c];
+
+		DocumentExportConfig *config = template->custom_base_export;		
+		if (config) {
+			if (config->document) {
+				context.push("document", config->document);
+			}
+
+			if (config->filter) {
+				ErrorResult *res = new ErrorResults;
+				res->Id(config->Id());
+				context.push(config->Id(), res, -1, true);
+				// results.push(res);
+				// res->dec_count();
+				int err = config->filter->Out(nullptr, config, log, res);
+				if (err > 0) {
+					delete[] scratch;
+					return false;
+				}
+			}
+		}
+
 		if (template->roll == Template::OneOff) {
+
 			for (int c2 = 0; status && c2 < template->vars.n; c2++) {
-				*** set up context
 				TemplateVar *var = template->vars.e[c2];
+				var->cached_value.SetToNone();
 				if (var->is_compute) {
 					Value *result = nullptr;
-					laidout->calculator.evaluate(var->default_value.c_str(),-1, &result, &log);
-				}
+					laidout->calculator.EvaluateWithParams(var->default_value.c_str(),-1, context, nullptr, &result, &log);
+					if (result) {
+						result->getValueStr(&scratch, &scratch_len, true);
+						var->cached_value = scratch;
+					}
+				} else var->cached_value = var->default_value;
 			}
 			if (!status) break;
 
@@ -304,15 +351,24 @@ bool ProjectTemplate::Export(Laxkit::ErrorLog &log)
 
 		} else {
 			// Template::PerSpread
-			***
+			*** set up context
+			*** first, last, number of, page range
+			context.push("num_spreads", new IntValue(***), -1, true);
+
+			if (!template->base_export_id.IsEmpty()) {
+				*** context for already exported
+			}
+
 			for (c2 = 0; c2 < *** each filter output file; c2++) {
-				*** set up context
 				for (int c3 = 0; status && c3 < template->vars.n; c3++) {
 					*** set up context
+					*** spread number
+					*** page number/label
+
 					TemplateVar *var = template->vars.e[c3];
 					if (var->is_compute) {
 						Value *result = nullptr;
-						laidout->calculator.evaluate(var->default_value.c_str(),-1, &result, &log);
+						laidout->calculator.EvaluateWithParams(var->default_value.c_str(),-1, context, nullptr, &result, &log);
 					}
 				}
 				if (!status) break;

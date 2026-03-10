@@ -133,7 +133,7 @@ ObjectDef *ImageGsExportFilter::GetObjectDef()
  * 
  * Currently uses a DocumentExportConfig for context.
  */
-int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DocumentExportConfig *out = dynamic_cast<DocumentExportConfig *>(context);
 	if (!out) return 1;
@@ -188,7 +188,7 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 		}
 	}
 
-	if (!pdfout || pdfout->Out(tmp,context,log)) {
+	if (!pdfout || pdfout->Out(tmp,context,log,nullptr)) {
 		log.AddMessage(_("Error exporting to temporary pdf."),ERROR_Fail);
 		delete[] filetemplate;
 		return 5;
@@ -248,11 +248,13 @@ int ImageGsExportFilter::Out(const char *filename, Laxkit::anObject *context, Er
 	waitpid(child,&status,0);
 	if (!WIFEXITED(status)) {
 		DBG cerr <<"*** error in child process, not returned normally!"<<endl;
-		error=newstr(_("Ghostscript interrupted from making image."));
+		error = newstr(_("Ghostscript interrupted from making image."));
 	} else if (WEXITSTATUS(status)!=0) {
 		DBG cerr <<"*** ghostscript returned error while trying to make preview"<<endl;
-		error=newstr(_("Ghostscript had error while making image."));
+		error = newstr(_("Ghostscript had error while making image."));
 	}
+
+	if (!error && results) results->Push(new StringValue(filetemplate), 1);
 
 	delete[] filetemplate;
 	unlink(tmp);

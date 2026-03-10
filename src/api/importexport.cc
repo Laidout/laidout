@@ -320,7 +320,7 @@ int ExportFunction(ValueHash *context,
 			if (config->doc) config->doc->inc_count();
 		}
 
-		err=export_document(config,log);
+		err = export_document(config, log, nullptr);
 
 	} catch (const char *str) {
 		log.AddMessage(str,ERROR_Fail);

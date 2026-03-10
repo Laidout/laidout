@@ -76,15 +76,25 @@ class ImportFilter : public FileFilter
 
 
 //------------------------------------- ExportFilter -----------------------------------
+
+class ExportResults : public SetValue
+{
+  public:
+  	ExportResults();
+	// virtual const char *whattype() { return "ExportResults"; }
+};
+
 class ExportFilter : public FileFilter
 {
  public:
 	virtual const char *whattype() { return "FileOutputFilter"; }
-	virtual int Out(const char *file, Laxkit::anObject *context,  Laxkit::ErrorLog &log) = 0;
+	virtual int Out(const char *file, Laxkit::anObject *context,  Laxkit::ErrorLog &log, ExportResults *results) = 0;
 	virtual int Verify(Laxkit::anObject *context) { return 1; } //= 0; //***preflight checker
 	virtual ObjectDef *makeObjectDef();
 	virtual DocumentExportConfig *CreateConfig(DocumentExportConfig *fromconfig);
 };
+
+
 
 //------------------------------- DocumentExportConfig ----------------------------------
 enum CollectForOutValues {
@@ -151,7 +161,7 @@ class DocumentExportConfig : public Value
 
 //------------------------------- export_document() ----------------------------------
 
-int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log);
+int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log, ExportResults *results);
 
 //------------------------------ ImportConfig ----------------------------
 ObjectDef *makeImportConfigDef();

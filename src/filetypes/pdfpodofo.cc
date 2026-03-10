@@ -367,7 +367,7 @@ void ScanForPdfFiles(NumStack<Utf8String> &pdf_files, DrawableObject *obj)
  * Return 0 for success, 1 for error and nothing written, 2 for error, and corrupted file possibly written.
  * 2 is mainly for debugging purposes, and will be perhaps be removed in the future.
  */
-int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DocumentExportConfig *config = dynamic_cast<DocumentExportConfig *>(context);
  	if (!config) return 1;
@@ -990,6 +990,7 @@ int PodofoExportFilter::Out(const char *filename, Laxkit::anObject *context, Err
 
     	// final write!
 	    podofodoc.Save(filename);
+	    if (results) results->Push(new StringValue(filename), 1);
 
 	} catch (PdfError& err) {
         // All PoDoFo methods may throw exceptions

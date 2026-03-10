@@ -832,7 +832,7 @@ void HtmlOutImage::Thumb(const char *nthumb, int pww,int phh)
  * 
  * Currently uses an HtmlGalleryExportConfig.
  */
-int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	HtmlGalleryExportConfig *out=dynamic_cast<HtmlGalleryExportConfig *>(context);
 	if (!out) {
@@ -890,6 +890,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 		return 5;
 	}
 
+	if (results) results->Push(new StringValue(scratch), 1);
 	fprintf(jsonout, 
 		"{\n"
 		" \"info\": {\n"
@@ -1093,6 +1094,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 				img->dec_count();
 				throw _("Could not save image");
 			}
+			if (results) results->Push(new StringValue(scratch),1);
 			num_images++;
 
 			scratch.Sprintf("images/%03d.%s", sc, out->image_format);
@@ -1107,6 +1109,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 					thumb->dec_count();
 					throw _("Could not save thumbnail");
 				}
+				if (results) results->Push(new StringValue(scratch), 1);
 
 				fprintf(jsonout, 
 						"    {\"file\":\"images/%03d.%s\", \"w\":%d, \"h\":%d, \"thumb\":\"images/%03d-s.png\", \"pw\":%d, \"ph\":%d }%s\n",
@@ -1145,7 +1148,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 				out->papergroup->inc_count();
 
 				ExportFilter *svgfilter = laidout->FindExportFilter("svg", false);
-				if (svgfilter->Out(svgconfig.filename, &svgconfig, log) != 0) {
+				if (svgfilter->Out(svgconfig.filename, &svgconfig, log, results) != 0) {
 					log.AddError("Could not export svg!");
 					return 10;
 				}
@@ -1179,11 +1182,12 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 						pagetemplate.Replace("<!--PAGE-SVG-->", svgstr.c_str(), true);
 
 						save_string_to_file(pagetemplate.c_str(), pagetemplate.Bytes(), scratch.c_str());
+						if (results) results->Push(new StringValue(scratch), 1);
 
 					} else {
 						// default page html
 						scratch.Sprintf("%s/page-%03d.html", filename, sc);
-						FILE *pagehtml = fopen(svgconfig.filename, "r");
+						FILE *pagehtml = fopen(scratch.c_str(), "w");
 
 						fprintf(pagehtml, "<html>\n<head>\n<title>%s</title>\n<style>\n body { background-color: #555; }\n</style>\n</head>\n<body>\n", filename);
 						fprintf(pagehtml, "%s<br>", filename);
@@ -1191,6 +1195,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 						fwrite("</body>\n</html>", 1, 15, pagehtml);
 
 						fclose(pagehtml);
+						if (results) results->Push(new StringValue(scratch), 1);
 					}
 				}
 				unlink(svgconfig.filename);
@@ -1222,6 +1227,7 @@ int HtmlGalleryExportFilter::Out(const char *filename, Laxkit::anObject *context
 		if (images) delete images;
 		return 5;
 	}
+	if (results) results->Push(new StringValue(scratch), 1);
 
 	Utf8String imageliststr;
 	HtmlOutImage *img = images;

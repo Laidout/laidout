@@ -246,7 +246,7 @@ static const char *pptpaper[12]= {
  *   and then otherwise "Letter", or choose a size that is big enough to hold the spreads
  * \todo for singles, should figure out what paper size to export as..
  */
-int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log)
+int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog &log, ExportResults *results)
 {
 	DocumentExportConfig *config=dynamic_cast<DocumentExportConfig *>(context);
 	if (!config) return 1;
@@ -290,6 +290,8 @@ int PptoutFilter::Out(const char *filename, Laxkit::anObject *context, ErrorLog 
 		return 3;
 	}
 	
+	if (results) results->Push(new StringValue(file), 1);
+
 	setlocale(LC_ALL,"C");
 	
 	 //figure out paper size and orientation

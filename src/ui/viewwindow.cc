@@ -4957,7 +4957,7 @@ int ViewWindow::Event(const Laxkit::EventData *data,const char *mes)
 		mesbar->SetText(_("Exporting..."));
 		mesbar->Refresh();
 
-		int err=export_document(d->config,log);
+		int err = export_document(d->config, log, nullptr);
 		if (err==0) mesbar->SetText(_("Exported."));
 		else mesbar->SetText(_("Error exporting."));
 		if (log.Total()) {

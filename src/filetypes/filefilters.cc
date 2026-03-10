@@ -1040,6 +1040,13 @@ int createExportConfig(ValueHash *context, ValueHash *parameters,
 }
 
 
+//---------------------------- ExportResults ------------------------------
+
+ExportResults::ExportResults()
+  : SetValue("String")
+{}
+
+
 //---------------------------- DocumentExportConfig ------------------------------
 /*! \class DocumentExportConfig
  * \brief Holds basic settings for exporting a document.
@@ -1601,7 +1608,7 @@ ObjectDef *DocumentExportConfig::makeObjectDef()
  * For single file targets, obeys config->evenodd. For multifile targets, the output filter
  * must account for it.
  */
-int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
+int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log, ExportResults *results)
 {
 	if (!config || !config->filter) {
 		log.AddMessage(_("Missing export filter!"),ERROR_Fail);
@@ -1721,7 +1728,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 				// }
 				// config->papergroup = pg;
 
-				err = config->filter->Out(filename, config, log);
+				err = config->filter->Out(filename, config, log, results);
 				// pg->dec_count();
 				if (err > 0) break;
 
@@ -1774,7 +1781,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 				}
 
 				config->filename = fname;
-				err              = config->filter->Out(nullptr, config, log);
+				err = config->filter->Out(nullptr, config, log, results);
 				if (err == 0 && config->send_to_command) files_outputted.push(newstr(fname));
 				delete[] fname;
 			}
@@ -1783,7 +1790,7 @@ int export_document(DocumentExportConfig *config, Laxkit::ErrorLog &log)
 			config->filename=oldfilename;
 
 		} else {
-			err = config->filter->Out(nullptr,config,log); //send all pages at once to filter
+			err = config->filter->Out(nullptr, config, log, results); //send all pages at once to filter
 			if (err == 0 && config->send_to_command) files_outputted.push(newstr(config->filename));
 		}
 	}

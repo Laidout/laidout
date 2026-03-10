@@ -1575,7 +1575,7 @@ void LaidoutApp::parseargs(int argc,char **argv)
 		config->dump_in_atts(&att,0,nullptr);//second time with doc!
 		if (config->range.NumRanges() == 0) config->range.AddRange(0,-1);
 
-		int err=export_document(config,error);
+		int err = export_document(config, error, nullptr);
 		if (err>0) {
 			dumperrorlog(_("Export failed."),error);
 			exit(1);
