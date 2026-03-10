@@ -161,12 +161,13 @@ void AdjustBox(Insets &box, const flatpoint &d, int i_offset, int hover_item, Pa
 PaperInterface::PaperInterface(anInterface *nowner,int nid,Displayer *ndp)
 	: anInterface(nowner,nid,ndp) 
 {
-	snapto      = MediaBox;
-	editwhat    = MediaBox;
-	drawwhat    = AllBoxes; //MediaBox;
-	showdecs    = 0;
-	show_labels = true;
+	snapto       = MediaBox;
+	editwhat     = MediaBox;
+	drawwhat     = AllBoxes; //MediaBox;
+	showdecs     = 0;
+	show_labels  = true;
 	show_indices = false;
+	show_arrows  = true;
 	sync_physical_size = true;
 	edit_back_indices = false;
 	edit_margins = false;
@@ -237,6 +238,7 @@ Laxkit::MenuInfo *PaperInterface::ContextMenu(int x,int y,int deviceid, Laxkit::
 	menu->AddToggleItem(_("Snap"),         PAPERI_ToggleSnap,     0, search_snap);
 	menu->AddToggleItem(_("Show labels"),  PAPERI_ToggleLabels,   0, show_labels);
 	menu->AddToggleItem(_("Show indices"), PAPERI_ToggleIndices,  0, show_indices);
+	menu->AddToggleItem(_("Show arrows"),  PAPERI_ToggleArrows,   0, show_arrows);
 	menu->AddToggleItem(_("Sync physical sizes"), PAPERI_ToggleSyncSizes,0, sync_physical_size);
 	menu->AddSep();
 
@@ -325,6 +327,7 @@ int PaperInterface::Event(const Laxkit::EventData *e,const char *mes)
 		if (     i == PAPERI_ToggleSnap
 			  || i == PAPERI_ToggleLabels
 			  || i == PAPERI_ToggleIndices
+			  || i == PAPERI_ToggleArrows
 			  || i == PAPERI_ToggleBackIndices
 			  || i == PAPERI_ToggleSyncSizes
 			  || i == PAPERI_ResetScaling
@@ -512,8 +515,8 @@ int PaperInterface::InterfaceOn()
 	DBG cerr <<"paperinterfaceOn()"<<endl;
 	LaidoutViewport *lvp=dynamic_cast<LaidoutViewport *>(curwindow);
 	if (lvp && papergroup) lvp->UseThisPaperGroup(papergroup);
-	showdecs=2;
-	needtodraw=1;
+	showdecs = show_fill;
+	needtodraw = 1;
 	return 0;
 }
 
@@ -845,8 +848,8 @@ int PaperInterface::Refresh()
 		if (!papergroup || !papergroup->papers.n) return 0;
 
 		DrawGroup(papergroup, 0, //shadow
-							  showdecs==1?1:0, //fill
-							  showdecs==2?1:0, //arrow
+							  showdecs == 1 ? 1 : 0, //fill
+							  show_arrows, //arrow
 							  3, // which
 							  true //with_decs
 							  );
@@ -1431,6 +1434,12 @@ int PaperInterface::PerformAction(int action)
 	} else if (action==PAPERI_ToggleIndices) {
 		show_indices = !show_indices;
 		PostMessage(show_indices ? _("Show indices") : _("Don't show indices"));
+		needtodraw = 1;
+		return 0;
+
+	} else if (action == PAPERI_ToggleArrows) {
+		show_arrows = !show_arrows;
+		PostMessage(show_arrows ? _("Show arrows") : _("Don't show arrows"));
 		needtodraw = 1;
 		return 0;
 

@@ -111,6 +111,8 @@ enum NetInterfaceAction {
 	NETI_Potential,
 	NETI_Paper,
 	// NETI_Papers,
+	
+	NETI_TogglePapers,
 
 	// overlays and actions
 	NETI_Help,
@@ -183,6 +185,7 @@ NetInterface::NetInterface(Laxkit::Displayer *dp)
 
 	color_potential.rgbf(.5,.5,1.);
 	color_face.rgbf(1.,.1,.1);
+	color_face_fill.rgbf(1.,1.,1.);
 
 	mouseover_overlay = -1;
 	mouseover_index   = -1;
@@ -229,7 +232,9 @@ void NetInterface::MakePaperInterface()
 	if (paper_interface) return;
 	paper_interface = new PaperInterface(0, dp);
 	paper_interface->InterfaceOn();
-	paper_interface->default_outline_color.setf(1., .5, .5);
+	paper_interface->default_outline_color.rgbf(.5, .5, 1.);
+	paper_interface->show_arrows = false;
+	paper_interface->show_fill = 2;
 }
 
 int NetInterface::InterfaceOn()
@@ -332,6 +337,11 @@ int NetInterface::ShowThisPaperSpread(int index)
 	return current_paper_spread;
 }
 
+int NetInterface::Needtodraw(int n)
+{
+	needtodraw |= n | paper_interface->Needtodraw();
+	return needtodraw;
+}
 
 int NetInterface::Refresh()
 {
@@ -347,7 +357,7 @@ int NetInterface::Refresh()
 	// dp->Zoom(current_netimp->scalefromnet);
 
 	//---- draw dotted face outlines for each potential face of currentnet
-	dp->Dashes(2.0);
+	dp->Dashes(.05);
 	dp->NewFG(color_potential);
 	dp->LineWidthScreen(ScreenLine());
 	for (int c = 0; c < current_netimp->nets.n; c++) {
@@ -379,9 +389,39 @@ int NetInterface::Refresh()
 	dp->stroke(0);
 
 	dp->Dashes(nullptr, 0, 0);
-	dp->NewFG(color_face);
+
+	//---- draw solid face fill for each actual face
+	dp->NewFG(color_face_fill);
+	for (int c = 0; c < current_netimp->nets.n; c++) {
+		Net *net = current_netimp->nets.e[c];
+
+		// int face = net->info; //the seed face for the net
+		flatpoint p;
+
+		for (int c2 = 0; c2 < net->faces.n; c2++) {
+			NetFace *face = net->faces.e[c2];
+			if (face->tag != FACE_Actual) continue;
+
+			// if (poly && poly->faces.e[net->faces.e[c2]->original]->cache->facemode != 0) continue;
+			// if (abstractnet) {
+			// 	NetFace *aface = abstractnet->GetFace(net->faces.e[c2]->original, 1);
+			// 	if (aface && aface->cache->facemode != 0) continue;
+			// }
+
+			for (int c3 = 0; c3 < face->edges.n; c3++) {
+				p = transform_point(face->matrix, face->edges.e[c3]->points->p());
+				p = transform_point(net->m(), p);
+
+				if (c3 == 0) dp->moveto(p);
+				else dp->lineto(p);
+			}
+			dp->closed();
+		}
+	}
+	dp->fill(0);
 
 	//---- draw solid face outlines for each actual face
+	dp->NewFG(color_face);
 	for (int c = 0; c < current_netimp->nets.n; c++) {
 		Net *net = current_netimp->nets.e[c];
 
@@ -416,42 +456,26 @@ int NetInterface::Refresh()
 
 int NetInterface::LBDown(int x,int y,unsigned int state,int count,const LaxMouse *mouse)
 {
-	int group = NETI_None;
-	int overlay = scanOverlays(x,y, nullptr,nullptr,&group);
 	int index = -1;
 	int neti = -1;
-	
-	flatpoint p = screentoreal(x,y);
-
-	if (group != NETI_None) {
-		index = overlay;
-	}
-
-	if (group == NETI_None) {
-		int c = findCurrentPotential(p, neti);
-		if (c >= 0) group = NETI_Potential;
-	}
-
-	if (group == NETI_None && draw_papers && paper_interface) {
-		int c = paper_interface->scan(x, y);
-		DBG cerr <<"scan paper lbd: "<<c<<endl;
-		if (c >= 0) {
-			group = NETI_Paper;
-			mouseover_index = c;
-			paper_interface->LBDown(x, y, state, count, mouse);
-		}
-	}
+	bool leaf = false;
+	int group = scan(x,y, state, neti, index, leaf);
 
 	// if (active_action == NETI_Unwrap) rbdown = currentface;
 	// if (active_action == NETI_Reseed) rbdown = currentface;
 
 	buttondown.down(mouse->id,LEFTBUTTON,x,y, group,index);
 
-	if (group != hover_group || index != hover_index || neti != hover_net) {
+	if (group != hover_group || index != hover_index || neti != hover_net || leaf != hover_face_is_leaf) {
 		hover_group = group;
 		hover_index = index;
 		hover_net = neti;
+		hover_face_is_leaf = leaf;
 		needtodraw = 1;
+	}
+
+	if (group == NETI_Paper) {
+		paper_interface->LBDown(x,y, state, count, mouse);
 	}
 
 	return 0;
@@ -459,14 +483,42 @@ int NetInterface::LBDown(int x,int y,unsigned int state,int count,const LaxMouse
 
 int NetInterface::LBUp(int x,int y,unsigned int state,const LaxMouse *mouse)
 {
-	int overlayid = -1;
+	if (!buttondown.any(mouse->id)) return 0;
+
+	// int overlayid = -1;
 	int orig_group = NETI_None;
-	// int group = NETI_None;
-	// //int dragged=
-	buttondown.up(mouse->id,LEFTBUTTON, &orig_group, &overlayid);
+	int orig_index = -1;
+	//int dragged=
+	buttondown.up(mouse->id,LEFTBUTTON, &orig_group, &orig_index);
 
 	if (orig_group == NETI_Paper) {
 		paper_interface->LBUp(x,y, state, mouse);
+		return 0;
+	}
+
+	if (orig_group == NETI_Face) {
+		if (hover_face_is_leaf) {
+			// face is a leaf. pick it up
+			Net *net = current_netimp->nets.e[hover_net];
+			// int i = -1;
+			// net->findOriginalFace(*** this is supposed to be poly face: hover_index,1,0,&i); //it is assumed the face is actually there
+			// net->PickUp(i, -1);
+			// if (poly) poly->faces.e[hover_index]->cache->facemode = 0;
+			net->PickUp(hover_index, -1);
+			needtodraw = 1;
+			return 0;
+		}
+		return 0;
+	}
+
+	if (orig_group == NETI_Potential) {
+		// click on a potential drops it down
+		Net *currentnet = current_netimp->nets[hover_net];
+		int orig = currentnet->faces.e[hover_index]->original;
+		if (poly) poly->faces.e[orig]->cache->facemode = currentnet->object_id;
+		currentnet->Drop(hover_index);
+
+		needtodraw = 1;
 		return 0;
 	}
 
@@ -604,73 +656,16 @@ int NetInterface::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 
 		int index = -1;
 		int neti = -1;
-		int group = NETI_None;
+		bool leaf = false;
+		int group = scan(x,y, state, neti, index, leaf);
 
-		flatpoint p = screentoreal(x,y);
-
-		int overlay = scanOverlays(x,y, nullptr,nullptr,&group);
-
-		if (group != NETI_None) {
-			index = overlay;
-		}
-
-		if (group == NETI_None) {
-			int neti = -1;
-			int c = findCurrentPotential(p, neti);
-			if (c >= 0) {
-				group = NETI_Potential;
-				index = c;
-			}
-		}
-
-		// scan for mouse over actual faces
-		if (group == NETI_None) {
-			int c = findCurrentFace(p, neti);
-
-			if (c != currentface || neti != hover_net) {
-				needtodraw  = 1;
-				index = c;
-				if (index >= 0) {
-					hover_face_is_leaf = false;
-					group = NETI_Face;
-					// DBG cerr <<"face "<<currentface<<" facemode "<<poly->faces.e[currentface]->cache->facemode<<endl;
-					if (poly && poly->faces.e[currentface]->cache->facemode > 0) {
-						// face is in a net. If it is a leaf in currentnet, color it green, rather then red
-						Net *net = findNet(poly->faces.e[currentface]->cache->facemode);
-						if (net && net == currentnet) {
-							int i = -1;
-							net->findOriginalFace(currentface, 1, 0, &i);  // it is assumed the face is actually there
-
-							DBG cerr << "find original neti:" << i << " actual links:" << net->actualLink(i, -1) << endl;
-
-							if (net->actualLink(i, -1) == 1) {
-								// only touches 1 actual face
-								hover_face_is_leaf = true;
-							}
-						}
-					} else if (poly && poly->faces.e[currentface]->cache->facemode < 0) {
-						// hover_face_is_leaf = ???;  // for seeds
-					}
-				}
-			}
-		}
-
-		if (group == NETI_None && draw_papers && paper_interface) {
-			int c = paper_interface->scan(x, y);
-			DBG cerr <<"scan paper lbd: "<<c<<endl;
-			if (c >= 0) {
-				group = NETI_Paper;
-				index = c;
-			}
-		}
-
-
-		if (group != hover_group || index != hover_index || neti != hover_net) {
+		if (group != hover_group || index != hover_index || neti != hover_net || leaf != hover_face_is_leaf) {
 			hover_group = group;
 			hover_index = index;
 			hover_net = neti;
+			hover_face_is_leaf = leaf;
 			needtodraw = 1;
-			PostMessage2("group: %d, index: %d, neti: %d", group, index, neti);
+			PostMessage2("group: %d, index: %d, neti: %d, leaf: %s", group, index, neti, hover_face_is_leaf ? "yes" : "no");
 		}
 
 		return 0;
@@ -689,6 +684,7 @@ int NetInterface::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 
 	if (bgroup == NETI_Paper) {
 		paper_interface->MouseMove(x,y, state, mouse);
+		needtodraw |= paper_interface->Needtodraw();
 		return 0;
 	}
 
@@ -738,9 +734,9 @@ int NetInterface::MouseMove(int x,int y,unsigned int state,const LaxMouse *mouse
 //			things.e[curobj]->RotateGlobal(angle*180/M_PI, axis.x,axis.y,axis.z);
 //		}
 
-		needtodraw = 1;
-		return 0;
-	}
+//	 	needtodraw = 1;
+//	 	return 0;
+//	 }
 
 
 
@@ -1027,6 +1023,85 @@ int NetInterface::removeNet(int netindex)
 	return 0;
 }
 
+/*! Returns group. */
+int NetInterface::scan(int x,int y, unsigned int state, int &neti, int &index, bool &leaf)
+{
+	flatpoint p = screentoreal(x,y);
+
+	int group = NETI_None;
+	neti = -1;
+	index = -1;
+
+	int overlay = scanOverlays(x,y, nullptr,nullptr,&group);
+	if (group != NETI_None) {
+		index = overlay;
+		neti = -1;
+		return group;
+	}
+
+	if (group == NETI_None) {
+		int c = findCurrentPotential(p, neti);
+		if (c >= 0) {
+			group = NETI_Potential;
+			index = c;
+			return group;
+		}
+	}
+
+	// scan for mouse over actual faces
+	if (group == NETI_None) {
+		int c = findCurrentFace(p, neti);
+		if (c >= 0) {
+			group = NETI_Face;
+			index = c;
+			leaf = false;
+
+			if (current_netimp->nets.e[neti]->faces.e[index]->NumPhysicallyConnectedEdges() <= 1) {
+				leaf = true;
+			}
+
+			// // DBG cerr <<"face "<<currentface<<" facemode "<<poly->faces.e[currentface]->cache->facemode<<endl;
+			// if (poly && poly->faces.e[currentface]->cache->facemode > 0) {
+			// 	// face is in a net. If it is a leaf in currentnet, color it green, rather then red
+			// 	Net *net = findNet(poly->faces.e[index]->cache->facemode);
+			// 	if (net && net == current_netimp->nets.e[neti]) {
+			// 		int i = -1;
+			// 		net->findOriginalFace(currentface, 1, 0, &i);  // it is assumed the face is actually there
+
+			// 		DBG cerr << "find original neti:" << i << " actual links:" << net->actualLink(i, -1) << endl;
+
+			// 		if (net->actualLink(i, -1) == 1) {
+			// 			// only touches 1 actual face
+			// 			hover_face_is_leaf = true;
+			// 		}
+			// 	}
+
+			// } else if (poly && poly->faces.e[currentface]->cache->facemode < 0) {
+			// 	// hover_face_is_leaf = ???;  // for seeds
+				
+			// } else {
+			// 	if (current_netimp->nets.e[neti]->faces.e[index]->NumPhysicallyConnectedEdges() <= 1) {
+			// 		hover_face_is_leaf = true;
+			// 	}
+			// }
+
+			return group;
+		}
+	}
+
+	if (group == NETI_None && draw_papers && paper_interface) {
+		int c = paper_interface->scan(x, y);
+		DBG cerr <<"scan paper lbd: "<<c<<endl;
+		if (c >= 0) {
+			group = NETI_Paper;
+			index = c;
+			return group;
+		}
+	}
+
+	return group;
+}
+
 int NetInterface::scanPaper(int x,int y, int &index)
 {
 	index = -1;
@@ -1078,6 +1153,7 @@ int NetInterface::findCurrentFace(const flatpoint &p, int &neti)
 		index = net->pointinface(p, 0);
 		if (index >= 0) {
 			neti = c;
+			DBGL("net pointinface: index: "<<index<<" neti: "<<neti);
 			break;
 		}
 	}
@@ -1416,6 +1492,19 @@ int NetInterface::Event(const EventData *data,const char *mes)
 		return 0;
 	}
 
+	if (!strcmp(mes,"menuevent")) {
+		const SimpleMessage *s = dynamic_cast<const SimpleMessage*>(data);
+		int i = s->info2; //id of menu item
+		// int info = s->info4;
+
+		if (i == NETI_TogglePapers) {
+			draw_papers = !draw_papers;
+			needtodraw = 1;
+			paper_interface->needtodraw = 0;
+			return 0;
+		}
+	}
+
 	// if (!strcmp(mes,"saveas")) {
 	// 	const StrEventData *s=dynamic_cast<const StrEventData*>(data);
 	// 	if (!s || isblank(s->str)) return 1;
@@ -1484,8 +1573,9 @@ Laxkit::MenuInfo *NetInterface::ContextMenu(int x,int y,int deviceid, Laxkit::Me
 {
 	if (!menu) menu = new MenuInfo();
 
-	// *** add resource list
-	
+	menu->AddSep(_("Papers"));
+	menu->AddToggleItem(_("Show papers"), NETI_TogglePapers, 0, draw_papers);
+
 	// if (singles) menu->AddToggleItem(_("Double sided"), SINGLES_ToggleDoubleSided, 0, singles->double_sided);
 	menu->AddSep(_("New net"));
 	// menu->SubMenu(_("New"));
@@ -1493,8 +1583,10 @@ Laxkit::MenuInfo *NetInterface::ContextMenu(int x,int y,int deviceid, Laxkit::Me
 	menu->AddItem(_("Box..."));
 	menu->AddItem(_("Accordion"));
 	menu->AddItem(_("Polyhedron from OFF file..."));
+	// *** add resource list
 	// menu->EndSubMenu();
 
+	
 	return menu;
 }
 

@@ -83,6 +83,7 @@ class NetInterface : virtual public ImpositionInterface
 
 	Laxkit::ScreenColor color_potential;
 	Laxkit::ScreenColor color_face;
+	Laxkit::ScreenColor color_face_fill;
 
 	Document *doc = nullptr;
 	NetImposition *original_netimp = nullptr;
@@ -92,7 +93,7 @@ class NetInterface : virtual public ImpositionInterface
 
 	Polyptych::AbstractNet *abstract_net = nullptr;
 	Polyptych::Polyhedron *poly = nullptr; // convenience cast for abstract_net
-	Polyptych::BasicNet *net = nullptr; // convenience cast for abstract_net
+	Polyptych::BasicNet *basic_net = nullptr; // convenience cast for abstract_net
 
 	// Laxkit::RefPtrStack<Polyptych::Net> nets; // each net->info is the index of the original face that acts as the seed
  
@@ -132,6 +133,7 @@ class NetInterface : virtual public ImpositionInterface
 	virtual Laxkit::ShortcutHandler *GetShortcuts();
 
 	virtual int Refresh();
+	virtual int Needtodraw(int n);
 	virtual int CharInput(unsigned int ch, const char *buffer,int len,unsigned int state,const Laxkit::LaxKeyboard *kb);
 	virtual int LBDown(int x,int y,unsigned int state,int count,const Laxkit::LaxMouse *mouse);
 	virtual int LBUp(int x,int y,unsigned int state,const Laxkit::LaxMouse *mouse);
@@ -159,6 +161,7 @@ class NetInterface : virtual public ImpositionInterface
 	// mouse position
 	virtual int findCurrentPotential(const Laxkit::flatpoint &p, int &neti);
 	virtual int findCurrentFace(const Laxkit::flatpoint &p, int &neti);
+	virtual int scan(int x,int y, unsigned int state, int &neti, int &index, bool &leaf);
 	virtual int scanPaper(int x,int y, int &index);
 	virtual int scanOverlays(int x,int y, int *action,int *index,int *group);
 	// virtual Laxkit::flatpoint pointInNetPlane(int x,int y);

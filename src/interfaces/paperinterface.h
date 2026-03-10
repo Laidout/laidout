@@ -48,6 +48,7 @@ enum PaperInterfaceActions {
 	PAPERI_ToggleSnap,
 	PAPERI_ToggleLabels,
 	PAPERI_ToggleIndices,
+	PAPERI_ToggleArrows,
 	PAPERI_ToggleBackIndices,
 	PAPERI_ToggleSyncSizes,
 	PAPERI_Swap_Orientation,
@@ -106,8 +107,6 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	int showdecs;
 	bool maybe_flush;
 
-	bool show_labels;
-	bool show_indices;
 	bool sync_physical_size;
 	bool full_menu = false;
 
@@ -122,7 +121,7 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	// double art_offset = .5;
 	// double printable_offset = .5;
 
-	double arrow_threshold = 10; // multpiles of ScreenLine()
+	double arrow_threshold = 10; // multiples of ScreenLine()
 	int hover_item = -1;
 
 	PaperGroup *papergroup;
@@ -151,6 +150,11 @@ class PaperInterface : virtual public LaxInterfaces::anInterface
 	virtual int PerformAction(int action);
 
   public:
+	bool show_labels  = true;
+	bool show_indices = false;
+	bool show_arrows  = true;
+	int  show_fill    = 1; // 0 is don't draw. 1 is outline only, 2 is filled
+
   	bool allow_margin_edit = true;
   	bool allow_trim_edit = true;
   	Laxkit::ScreenColor default_outline_color;

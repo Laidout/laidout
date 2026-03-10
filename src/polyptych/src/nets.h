@@ -94,6 +94,7 @@ class NetFace
 	//virtual int Set(const char *list, const char *link=NULL);
 	//virtual int Set(int n,int *list,int *link=NULL,int dellists=0);
 	virtual int getOutline(int *n, Laxkit::flatpoint **p, int convert);
+	virtual int NumPhysicallyConnectedEdges();
 
 	virtual Laxkit::flatpoint Origin();
 	virtual Laxkit::flatpoint XaxisPoint();

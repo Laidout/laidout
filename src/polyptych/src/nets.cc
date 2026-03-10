@@ -497,6 +497,32 @@ const NetFace &NetFace::operator=(const NetFace &face)
 //	return np;
 //}
 
+// int Net::NumPhysicallyConnectedEdges(int face_index)
+// {
+// 	if (face_index < 0 || face_index >= faces.n) return 0;
+
+// 	int n = 0;
+// 	NetFace *face = nets.e[face_index];
+// 	for (int c = 0; c < face->edges.n; c++) {
+// 		if (face->edges.e[c]->toface >= 0) {
+// 			if (faces.e[face->edges.e[c]->toface]->tag == FACE_Actual)
+// 				n++;
+// 		}
+// 	}
+// 	return n;
+// }
+
+int NetFace::NumPhysicallyConnectedEdges()
+{
+	int n = 0;
+	for (int c = 0; c < edges.n; c++) {
+		if (edges.e[c]->toface >= 0) {
+			if (edges.e[c]->tag == FACE_Actual) n++;
+		}
+	}
+	return n;
+}
+
 //! Return the outline of the face.
 /*! If convert==0, then the points are in face coordinates. Otherwise, they
  * are in net coordinates, according to NetFace::matrix, if any.
@@ -2052,16 +2078,21 @@ int Net::rebuildLines()
  * If startsearchhere>=0, then start lookind at net faces from net face index startsearchhere.
  *
  */
-int Net::findOriginalFace(int i,int status,int startsearchhere, int *index_ret)
+int Net::findOriginalFace(int base_i,int status,int startsearchhere, int *index_ret)
 {
 	int c;
-	for (c=(startsearchhere>=0?startsearchhere:0); c<faces.n; c++) {
-		if (faces.e[c]->original==i) {
-			if (status!=2 && faces.e[c]->tag==FACE_Actual) { if (index_ret) *index_ret=c; return 1; }
-			else if (status!=1 && faces.e[c]->tag==FACE_Potential) { if (index_ret) *index_ret=c; return 2; }
+	for (c = (startsearchhere >= 0 ? startsearchhere : 0); c < faces.n; c++) {
+		if (faces.e[c]->original == base_i) {
+			if (status != 2 && faces.e[c]->tag == FACE_Actual) {
+				if (index_ret) *index_ret = c;
+				return 1;
+			} else if (status != 1 && faces.e[c]->tag == FACE_Potential) {
+				if (index_ret) *index_ret = c;
+				return 2;
+			}
 		}
 	}
-	if (index_ret) *index_ret=-1;
+	if (index_ret) *index_ret = -1;
 	return 0;
 }
 
