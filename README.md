@@ -1,9 +1,12 @@
 Laidout Version 0.097.1
 =======================
 
+THIS REPO HAS MOVED!!
+The current repo can be found at: https://codeberg.org/Laidout/laidout
+
+
 https://laidout.org
 
-The latest releases: https://github.com/Laidout/laidout/releases
 
 
 What it can do right now
