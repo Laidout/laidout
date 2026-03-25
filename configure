@@ -349,6 +349,11 @@ if [ x$LANGUAGE_PATH == x ]; then
 	LANGUAGE_PATH=share/locale
 fi
 
+ ##
+ ## generate src/laidout_version.txt, required by ci builds
+ ##
+echo "$LAIDOUTVERSION" > src/laidout_version.txt
+
 
  ##
  ## generate src/version.h
